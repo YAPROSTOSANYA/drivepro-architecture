@@ -29,3 +29,5 @@ API эндпоинты:
 4) GET /api/courses/:id — детали курса
 5) POST /api/applications — подача заявки
 6) GET /api/profile — данные пользователя
+7) POST /api/auth/forgot-password — запрос на восстановление пароля
+8) POST /api/auth/reset-password — установка нового пароля
