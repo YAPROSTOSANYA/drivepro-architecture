@@ -2,7 +2,7 @@
 
 Frontend:
 
-1) HTML
+1) JavaScript
 2) CSS
 3) Jinja2
 
