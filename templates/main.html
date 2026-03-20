@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Drive-Pro</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="app">
+        {% if page == "login" %}
+            <h1>Вход</h1>
+            <form id="loginForm">
+                <input type="email" placeholder="Email" required>
+                <input type="password" placeholder="Пароль" required>
+                <button type="submit">Войти</button>
+            </form>
+        {% elif page == "register" %}
+            <h1>Регистрация</h1>
+            <form id="registerForm">
+                <input type="text" placeholder="Имя" required>
+                <input type="email" placeholder="Email" required>
+                <input type="password" placeholder="Пароль" required>
+                <button type="submit">Зарегистрироваться</button>
+            </form>
+        {% elif page == "profile" %}
+            <h1>Привет, {{ user.name }}!</h1>
+            <p>Это приватная страница.</p>
+        {% endif %}
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
