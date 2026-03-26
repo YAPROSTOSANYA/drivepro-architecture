@@ -1,66 +1,101 @@
 // ----------------------------
-// Пользователи
+// API URL
 // ----------------------------
-async function registerUser(name, email, password) {
-    const res = await fetch("http://127.0.0.1:5000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
-    });
-    const data = await res.json();
-    console.log("Регистрация:", data);
-    return data;
+const API = "http://127.0.0.1:5000/api/auth";
+
+// ----------------------------
+// Работа с токеном
+// ----------------------------
+function saveToken(token) {
+    localStorage.setItem("token", token);
 }
 
-async function loginUser(email, password) {
-    const res = await fetch("http://127.0.0.1:5000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    console.log("Логин:", data);
-    return data;
+function getToken() {
+    return localStorage.getItem("token");
 }
 
-async function getProfile(token) {
-    const res = await fetch("http://127.0.0.1:5000/api/auth/me", {
+function logout() {
+    localStorage.removeItem("token");
+    console.log("Вы вышли из системы");
+}
+
+// ----------------------------
+// AUTH API
+// ----------------------------
+async function register(email, name, password) {
+    const res = await fetch(`${API}/register`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({email, name, password})
+    });
+    return res.json();
+}
+
+async function login(email, password) {
+    const res = await fetch(`${API}/login`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({email, password})
+    });
+    return res.json();
+}
+
+async function getProfile() {
+    const token = getToken();
+    const res = await fetch(`${API}/me`, {
         headers: { "Authorization": token }
     });
-    const data = await res.json();
-    console.log("Профиль:", data);
-    return data;
+    return res.json();
 }
 
 // ----------------------------
-// Item
+// “Страницы” (логика)
 // ----------------------------
-async function createItem(title, description, token) {
-    const res = await fetch("http://127.0.0.1:5000/api/items", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": token },
-        body: JSON.stringify({ title, description })
-    });
-    const data = await res.json();
-    console.log("Создан Item:", data);
+
+// /auth/register
+async function pageRegister() {
+    console.log("=== Страница регистрации ===");
+
+    const data = await register("new@test.com", "Саня", "12345");
+    console.log(data);
+
+    console.log("Переход на /auth/login...");
+    await pageLogin();
 }
 
-async function getItems() {
-    const res = await fetch("http://127.0.0.1:5000/api/items");
-    const data = await res.json();
-    console.log("Список Item:", data);
-    return data;
+// /auth/login
+async function pageLogin() {
+    console.log("=== Страница логина ===");
+
+    const data = await login("new@test.com", "12345");
+    console.log(data);
+
+    if (data.token) {
+        saveToken(data.token);
+        console.log("Успешный вход → переход на /profile");
+        await pageProfile();
+    }
+}
+
+// /profile (приватная)
+async function pageProfile() {
+    console.log("=== Приватная страница /profile ===");
+
+    const token = getToken();
+
+    if (!token) {
+        console.log("Нет токена → редирект на /auth/login");
+        return pageLogin();
+    }
+
+    const profile = await getProfile();
+    console.log("Данные пользователя:", profile);
 }
 
 // ----------------------------
-// Пример использования
+// Запуск приложения
 // ----------------------------
 (async () => {
-    const reg = await registerUser("Саня", "item@test.com", "12345");
-    const loginData = await loginUser("item@test.com", "12345");
-    if (loginData.token) {
-        await createItem("Моя первая запись", "Описание записи", loginData.token);
-        await getItems();
-        await getProfile(loginData.token);
-    }
+    // имитируем переход на страницу регистрации
+    await pageRegister();
 })();
