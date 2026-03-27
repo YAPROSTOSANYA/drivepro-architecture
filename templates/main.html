@@ -2,31 +2,17 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Drive-Pro</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <div id="app">
-        {% if page == "login" %}
-            <h1>Вход</h1>
-            <form id="loginForm">
-                <input type="email" placeholder="Email" required>
-                <input type="password" placeholder="Пароль" required>
-                <button type="submit">Войти</button>
-            </form>
-        {% elif page == "register" %}
-            <h1>Регистрация</h1>
-            <form id="registerForm">
-                <input type="text" placeholder="Имя" required>
-                <input type="email" placeholder="Email" required>
-                <input type="password" placeholder="Пароль" required>
-                <button type="submit">Зарегистрироваться</button>
-            </form>
-        {% elif page == "profile" %}
-            <h1>Привет, {{ user.name }}!</h1>
-            <p>Это приватная страница.</p>
-        {% endif %}
-    </div>
-    <script src="/static/app.js"></script>
+    <h1>Drive-Pro</h1>
+    <div id="app"></div>
+
+    <script>
+        window.PAGE = "{{ page }}";
+    </script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>
