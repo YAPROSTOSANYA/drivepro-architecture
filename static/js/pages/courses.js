@@ -1,6 +1,11 @@
 import { showLoading, showError } from '../modules/ui.js';
 
 let allCourses = [];
+let currentPage = 1;
+let totalPages = 1;
+let currentSearch = '';
+let currentCategory = '';
+let currentPriceRange = '';
 
 export async function renderCourses() {
     const app = document.getElementById('app');
@@ -30,17 +35,31 @@ export async function renderCourses() {
             </div>
 
             <div id="courses-list" class="courses-grid"></div>
+
+            <div class="pagination" id="pagination"></div>
         </div>
     `;
 
     await loadCourses();
 
-    document.getElementById('searchBtn').addEventListener('click', filterCourses);
-    document.getElementById('searchInput').addEventListener('keyup', (e) => {
-        if (e.key === 'Enter') filterCourses();
+    document.getElementById('searchBtn').addEventListener('click', () => {
+        currentPage = 1;
+        filterCourses();
     });
-    document.getElementById('categoryFilter').addEventListener('change', filterCourses);
-    document.getElementById('priceFilter').addEventListener('change', filterCourses);
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+            currentPage = 1;
+            filterCourses();
+        }
+    });
+    document.getElementById('categoryFilter').addEventListener('change', () => {
+        currentPage = 1;
+        filterCourses();
+    });
+    document.getElementById('priceFilter').addEventListener('change', () => {
+        currentPage = 1;
+        filterCourses();
+    });
 }
 
 async function loadCourses() {
@@ -50,9 +69,19 @@ async function loadCourses() {
     showLoading('courses-list');
 
     try {
-        const res = await fetch('/api/courses');
-        allCourses = await res.json();
+        let url = `/api/courses?page=${currentPage}&per_page=6`;
+        if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
+        if (currentCategory) url += `&category=${currentCategory}`;
+        if (currentPriceRange) url += `&price_range=${currentPriceRange}`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        allCourses = data.courses || [];
+        totalPages = data.pages || 1;
+
         displayCourses(allCourses);
+        renderPagination();
     } catch (error) {
         showError('Ошибка загрузки курсов');
     }
@@ -67,16 +96,15 @@ function displayCourses(courses) {
         return;
     }
 
-    // Получаем избранное из localStorage
     const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
 
     container.innerHTML = courses.map(course => `
         <div class="course-card" data-id="${course.id}">
             <h3>${escapeHtml(course.title)}</h3>
             <p>${escapeHtml(course.description)}</p>
-            <p>Цена: ${course.price} руб.</p>
-            <p>Длительность: ${course.duration}</p>
-            <p>Категория: ${course.category}</p>
+            <p>💰 Цена: ${course.price} руб.</p>
+            <p>⏱ Длительность: ${course.duration}</p>
+            <p>📚 Категория: ${course.category}</p>
             <button class="favorite-btn ${favorites.includes(course.id) ? 'active' : ''}" data-id="${course.id}">
                 ${favorites.includes(course.id) ? '★ В избранном' : '☆ В избранное'}
             </button>
@@ -84,7 +112,6 @@ function displayCourses(courses) {
         </div>
     `).join('');
 
-    // Добавляем обработчики для кнопок избранного
     document.querySelectorAll('.favorite-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -94,34 +121,44 @@ function displayCourses(courses) {
     });
 }
 
+function renderPagination() {
+    const paginationDiv = document.getElementById('pagination');
+    if (!paginationDiv) return;
+
+    if (totalPages <= 1) {
+        paginationDiv.innerHTML = '';
+        return;
+    }
+
+    let html = '<div class="pagination-controls">';
+
+    if (currentPage > 1) {
+        html += `<button class="page-btn" data-page="${currentPage - 1}">◀ Назад</button>`;
+    }
+
+    html += `<span class="page-info">Страница ${currentPage} из ${totalPages}</span>`;
+
+    if (currentPage < totalPages) {
+        html += `<button class="page-btn" data-page="${currentPage + 1}">Вперед ▶</button>`;
+    }
+
+    html += '</div>';
+    paginationDiv.innerHTML = html;
+
+    document.querySelectorAll('.page-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            currentPage = parseInt(btn.dataset.page);
+            loadCourses();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    });
+}
+
 function filterCourses() {
-    const searchText = document.getElementById('searchInput').value.toLowerCase();
-    const category = document.getElementById('categoryFilter').value;
-    const priceRange = document.getElementById('priceFilter').value;
-
-    let filtered = [...allCourses];
-
-    // Поиск по названию
-    if (searchText) {
-        filtered = filtered.filter(c => c.title.toLowerCase().includes(searchText));
-    }
-
-    // Фильтр по категории
-    if (category) {
-        filtered = filtered.filter(c => c.category === category);
-    }
-
-    // Фильтр по цене
-    if (priceRange) {
-        const [min, max] = priceRange.split('-').map(Number);
-        if (max) {
-            filtered = filtered.filter(c => c.price >= min && c.price <= max);
-        } else {
-            filtered = filtered.filter(c => c.price >= min);
-        }
-    }
-
-    displayCourses(filtered);
+    currentSearch = document.getElementById('searchInput').value.toLowerCase();
+    currentCategory = document.getElementById('categoryFilter').value;
+    currentPriceRange = document.getElementById('priceFilter').value;
+    loadCourses();
 }
 
 function toggleFavorite(courseId) {
@@ -136,9 +173,7 @@ function toggleFavorite(courseId) {
     }
 
     localStorage.setItem('favorites', JSON.stringify(favorites));
-
-    // Обновляем отображение
-    filterCourses();
+    displayCourses(allCourses);
 }
 
 function escapeHtml(text) {

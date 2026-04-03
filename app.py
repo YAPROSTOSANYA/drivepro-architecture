@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, session, redirect
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from sqlalchemy import or_
 
 app = Flask(__name__)
 
@@ -274,16 +275,43 @@ def delete_item(item_id):
 # ================= API КУРСОВ =================
 @app.route('/api/courses', methods=['GET'])
 def get_courses():
-    courses = Course.query.all()
-    return jsonify([{
-        'id': c.id,
-        'title': c.title,
-        'description': c.description,
-        'price': c.price,
-        'duration': c.duration,
-        'category': c.category,
-        'image': c.image
-    } for c in courses]), 200
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 6, type=int)
+    search = request.args.get('search', '')
+    category = request.args.get('category', '')
+    price_range = request.args.get('price_range', '')
+
+    query = Course.query
+
+    if search:
+        query = query.filter(Course.title.ilike(f'%{search}%'))
+
+    if category:
+        query = query.filter(Course.category == category)
+
+    if price_range:
+        if '-' in price_range:
+            min_price, max_price = price_range.split('-')
+            query = query.filter(Course.price >= int(min_price), Course.price <= int(max_price))
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    courses = pagination.items
+
+    return jsonify({
+        'courses': [{
+            'id': c.id,
+            'title': c.title,
+            'description': c.description,
+            'price': c.price,
+            'duration': c.duration,
+            'category': c.category,
+            'image': c.image
+        } for c in courses],
+        'total': pagination.total,
+        'page': pagination.page,
+        'pages': pagination.pages,
+        'per_page': pagination.per_page
+    }), 200
 
 
 @app.route('/api/courses/<int:course_id>', methods=['GET'])
