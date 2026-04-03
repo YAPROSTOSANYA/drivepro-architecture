@@ -1,7 +1,10 @@
 export function showLoading(containerId) {
     const container = document.getElementById(containerId);
     if (container) {
-        container.innerHTML = '<div class="loader">Загрузка...</div>';
+        const existingLoader = container.querySelector('.loader');
+        if (!existingLoader) {
+            container.innerHTML = '<div class="loader">Загрузка...</div>' + (container.innerHTML || '');
+        }
     }
 }
 

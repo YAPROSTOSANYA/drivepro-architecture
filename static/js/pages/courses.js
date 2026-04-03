@@ -1,4 +1,4 @@
-import { showLoading, showError } from '../modules/ui.js';
+import { showLoading, hideLoading, showError } from '../modules/ui.js';
 
 let allCourses = [];
 let currentPage = 1;
@@ -80,9 +80,11 @@ async function loadCourses() {
         allCourses = data.courses || [];
         totalPages = data.pages || 1;
 
+        hideLoading('courses-list');
         displayCourses(allCourses);
         renderPagination();
     } catch (error) {
+        hideLoading('courses-list');
         showError('Ошибка загрузки курсов');
     }
 }

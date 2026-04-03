@@ -1,4 +1,4 @@
-import { showLoading, showError } from '../modules/ui.js';
+import { showLoading, hideLoading, showError } from '../modules/ui.js';
 
 export async function renderApplications() {
     const app = document.getElementById('app');
@@ -22,6 +22,8 @@ async function loadApplications() {
         const res = await fetch('/api/applications');
         const apps = await res.json();
 
+        hideLoading('applications-list');
+
         if (apps.length === 0) {
             container.innerHTML = '<p>У вас пока нет заявок</p>';
             return;
@@ -35,6 +37,7 @@ async function loadApplications() {
             </div>
         `).join('');
     } catch (error) {
+        hideLoading('applications-list');
         showError('Ошибка загрузки заявок');
     }
 }

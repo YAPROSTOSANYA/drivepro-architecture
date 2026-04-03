@@ -1,4 +1,4 @@
-import { showLoading, showError } from '../modules/ui.js';
+import { showLoading, hideLoading, showError } from '../modules/ui.js';
 
 export async function renderApply() {
     const app = document.getElementById('app');
@@ -46,9 +46,12 @@ async function loadCoursesForSelect() {
         const res = await fetch('/api/courses');
         const courses = await res.json();
 
+        hideLoading('courseSelect');
+
         select.innerHTML = '<option value="">Выберите курс</option>' +
             courses.map(c => `<option value="${c.id}">${c.title} - ${c.price} руб.</option>`).join('');
     } catch (error) {
+        hideLoading('courseSelect');
         showError('Ошибка загрузки курсов');
     }
 }

@@ -1,4 +1,4 @@
-import { showLoading, showError } from '../modules/ui.js';
+import { showLoading, hideLoading, showError } from '../modules/ui.js';
 
 export async function renderCourseDetail(courseId) {
     const app = document.getElementById('app');
@@ -39,14 +39,17 @@ async function loadCourseDetail(courseId) {
         const res = await fetch(`/api/courses/${courseId}`);
         const course = await res.json();
 
+        hideLoading('course-detail');
+
         container.innerHTML = `
             <h2>${escapeHtml(course.title)}</h2>
             <p>${escapeHtml(course.description)}</p>
-            <p>Цена: ${course.price} руб.</p>
-            <p>Длительность: ${course.duration}</p>
-            <p>Категория: ${course.category}</p>
+            <p>💰 Цена: ${course.price} руб.</p>
+            <p>⏱ Длительность: ${course.duration}</p>
+            <p>📚 Категория: ${course.category}</p>
         `;
     } catch (error) {
+        hideLoading('course-detail');
         showError('Ошибка загрузки курса');
     }
 }
