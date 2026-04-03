@@ -123,10 +123,8 @@ def reset_password_page():
 
 
 @app.route('/cabinet')
-def cabinet_page():
-    if 'user_id' not in session:
-        return redirect('/auth/login')
-    return render_template('main.html', page='cabinet')
+def cabinet_redirect():
+    return redirect('/profile')
 
 
 # ================= API АУТЕНТИФИКАЦИИ =================
@@ -168,6 +166,10 @@ def login():
 
         session['user_id'] = user.id
         session['user_name'] = user.name
+
+        if data.get('remember_me'):
+            session.permanent = True
+            app.config['PERMANENT_SESSION_LIFETIME'] = 30 * 24 * 3600
 
         return jsonify({
             'success': True,
@@ -464,18 +466,18 @@ def create_application():
 def seed():
     if Course.query.count() == 0:
         courses = [
-            Course(title='Категория B', description='Обучение на легковой автомобиль. Теория и практика.', price=25000,
+            Course(title='Категория B', description='Обучение на легковой автомобиль. Теория и практика.', price=1200,
                    duration='2.5 месяца', category='basic'),
-            Course(title='Категория A', description='Обучение на мотоцикл. Для начинающих и опытных.', price=18000,
+            Course(title='Категория A', description='Обучение на мотоцикл. Для начинающих и опытных.', price=800,
                    duration='1.5 месяца', category='moto'),
             Course(title='Категория C', description='Обучение на грузовой автомобиль. Профессиональная подготовка.',
-                   price=35000, duration='3 месяца', category='truck'),
+                   price=1500, duration='3 месяца', category='truck'),
             Course(title='Категория D', description='Обучение на автобус. Для работы в пассажирских перевозках.',
-                   price=40000, duration='3.5 месяца', category='bus')
+                   price=1800, duration='3.5 месяца', category='bus')
         ]
         db.session.add_all(courses)
         db.session.commit()
-        return 'Курсы добавлены (4 шт.)'
+        return 'Курсы добавлены (4 шт.) с ценами в BYN'
     return 'Курсы уже есть'
 
 

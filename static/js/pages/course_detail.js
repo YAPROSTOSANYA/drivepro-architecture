@@ -1,4 +1,4 @@
-import { showLoading, hideLoading, showError } from '../modules/ui.js';
+import { showLoading, hideLoading, showError, showNotification } from '../modules/ui.js';
 
 export async function renderCourseDetail(courseId) {
     const app = document.getElementById('app');

@@ -1,4 +1,4 @@
-import { showLoading, hideLoading, showError } from '../modules/ui.js';
+import { showLoading, hideLoading, showError, showNotification } from '../modules/ui.js';
 
 let allCourses = [];
 let currentPage = 1;

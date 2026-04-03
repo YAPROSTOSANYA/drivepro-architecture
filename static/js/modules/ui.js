@@ -61,7 +61,6 @@ export function renderNav(user) {
             <a href="/">Главная</a>
             <a href="/about">О школе</a>
             <a href="/courses">Курсы</a>
-            <a href="/cabinet">Кабинет</a>
             <a href="/profile">Профиль</a>
             <a href="/applications">Мои заявки</a>
             <a href="/apply">Записаться</a>

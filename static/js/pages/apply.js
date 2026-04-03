@@ -1,4 +1,4 @@
-import { showLoading, hideLoading, showError } from '../modules/ui.js';
+import { showLoading, hideLoading, showError, showNotification } from '../modules/ui.js';
 
 export async function renderApply() {
     const app = document.getElementById('app');
@@ -16,7 +16,7 @@ export async function renderApply() {
     document.getElementById('submitApply').onclick = async () => {
         const courseId = document.getElementById('courseSelect').value;
         if (!courseId) {
-            alert('Выберите курс');
+            showNotification('Выберите курс', 'error');
             return;
         }
 
@@ -30,8 +30,10 @@ export async function renderApply() {
         const resultDiv = document.getElementById('applyResult');
         if (data.success) {
             resultDiv.innerHTML = '<p class="success">Заявка подана!</p>';
+            showNotification('Заявка подана', 'success');
         } else {
             resultDiv.innerHTML = `<p class="error">${data.message}</p>`;
+            showNotification(data.message, 'error');
         }
     };
 }
@@ -49,7 +51,7 @@ async function loadCoursesForSelect() {
         hideLoading('courseSelect');
 
         select.innerHTML = '<option value="">Выберите курс</option>' +
-            courses.map(c => `<option value="${c.id}">${c.title} - ${c.price} руб.</option>`).join('');
+            courses.map(c => `<option value="${c.id}">${c.title} - ${c.price} BYN</option>`).join('');
     } catch (error) {
         hideLoading('courseSelect');
         showError('Ошибка загрузки курсов');
