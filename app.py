@@ -340,6 +340,7 @@ def get_courses():
     search = request.args.get('search', '')
     category = request.args.get('category', '')
     price_range = request.args.get('price_range', '')
+    sort = request.args.get('sort', 'title_asc')
 
     query = Course.query
 
@@ -353,6 +354,16 @@ def get_courses():
         if '-' in price_range:
             min_price, max_price = price_range.split('-')
             query = query.filter(Course.price >= int(min_price), Course.price <= int(max_price))
+
+    # Сортировка
+    if sort == 'title_asc':
+        query = query.order_by(Course.title.asc())
+    elif sort == 'title_desc':
+        query = query.order_by(Course.title.desc())
+    elif sort == 'price_asc':
+        query = query.order_by(Course.price.asc())
+    elif sort == 'price_desc':
+        query = query.order_by(Course.price.desc())
 
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     courses = pagination.items
@@ -459,6 +470,22 @@ def create_application():
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/applications/<int:application_id>', methods=['DELETE'])
+def delete_application(application_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    app_entry = Application.query.filter_by(id=application_id, user_id=session['user_id']).first()
+
+    if not app_entry:
+        return jsonify({'success': False, 'message': 'Заявка не найдена'}), 404
+
+    db.session.delete(app_entry)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': 'Заявка отменена'}), 200
 
 
 # ================= ТЕСТОВЫЕ ДАННЫЕ =================

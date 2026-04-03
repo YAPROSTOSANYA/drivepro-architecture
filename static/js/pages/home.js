@@ -1,11 +1,11 @@
 export function renderHome() {
     const app = document.getElementById('app');
     app.innerHTML = `
-        <div class="home-container" style="text-align: center;">
+        <div class="home-container">
             <div class="hero">
                 <h1>Добро пожаловать в DrivePro</h1>
                 <p>Официальная автошкола с лицензией и опытными инструкторами</p>
-                <div class="hero-buttons">
+                <div class="hero-buttons" id="hero-buttons">
                     <a href="/courses" class="btn btn-large">Посмотреть курсы</a>
                     <a href="/about" class="btn btn-outline">Узнать о нас</a>
                 </div>
@@ -50,4 +50,10 @@ export function renderHome() {
             </div>
         </div>
     `;
+
+    // Принудительно сдвигаем кнопки вниз
+    const heroButtons = document.getElementById('hero-buttons');
+    if (heroButtons) {
+        heroButtons.style.marginTop = '80px';
+    }
 }

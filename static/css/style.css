@@ -267,25 +267,13 @@ h2 {
     background: #5a67d8;
 }
 
-/* Кнопка избранного */
-.favorite-btn {
-    background: #ffc107;
-    color: #333;
-    border: none;
-    padding: 8px 15px;
+#sortFilter {
+    padding: 10px;
+    border: 1px solid #ddd;
     border-radius: 5px;
+    font-size: 14px;
+    background: white;
     cursor: pointer;
-    margin-right: 10px;
-    margin-top: 10px;
-}
-
-.favorite-btn.active {
-    background: #ff9800;
-    color: white;
-}
-
-.favorite-btn:hover {
-    background: #ffb300;
 }
 
 /* Пагинация */
@@ -407,13 +395,17 @@ h2 {
 }
 
 /* Главная страница */
+.home-container {
+    padding-top: 20px;
+}
+
 .hero {
     text-align: center;
-    padding: 60px 20px;
+    padding: 120px 20px 80px 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 20px;
     color: white;
-    margin-bottom: 40px;
+    margin-bottom: 60px;
 }
 
 .hero h1 {
@@ -425,7 +417,7 @@ h2 {
 
 .hero p {
     font-size: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
     opacity: 0.9;
 }
 
@@ -433,6 +425,7 @@ h2 {
     display: flex;
     gap: 20px;
     justify-content: center;
+    margin-top: 60px;
 }
 
 .btn-large {
@@ -444,6 +437,11 @@ h2 {
     background: transparent;
     border: 2px solid white;
     color: white;
+    padding: 13px 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
 
 .btn-outline:hover {
@@ -455,7 +453,7 @@ h2 {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 30px;
-    margin: 50px 0;
+    margin: 100px 0;
 }
 
 .feature {
@@ -485,7 +483,7 @@ h2 {
     display: flex;
     justify-content: center;
     gap: 50px;
-    margin-top: 50px;
+    margin: 100px 0 60px 0;
     padding: 40px;
     background: white;
     border-radius: 15px;
@@ -517,9 +515,10 @@ h2 {
     position: static;
 }
 
-.about-header p {
+.about-subtitle {
     font-size: 18px;
-    color: #666;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }
 
 .about-content {
@@ -577,6 +576,36 @@ h2 {
     font-weight: bold;
 }
 
+.cancel-application-btn {
+    background: #e53e3e;
+    margin-top: 10px;
+}
+
+.cancel-application-btn:hover {
+    background: #c53030;
+}
+
+/* Кнопка избранного */
+.favorite-btn {
+    background: #ffc107;
+    color: #333;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+    margin-top: 10px;
+}
+
+.favorite-btn.active {
+    background: #ff9800;
+    color: white;
+}
+
+.favorite-btn:hover {
+    background: #ffb300;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     body {
@@ -611,11 +640,6 @@ h2 {
 
     .filters input, .filters select, .filters button {
         width: 100%;
-    }
-
-    .favorite-btn {
-        display: inline-block;
-        margin-bottom: 10px;
     }
 
     .pagination-controls {
@@ -673,10 +697,4 @@ h2 {
         flex-direction: column;
         align-items: center;
     }
-}
-
-.about-subtitle {
-    font-size: 18px;
-    color: white;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
 }

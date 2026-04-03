@@ -1,4 +1,4 @@
-import { showLoading, hideLoading, showError } from '../modules/ui.js';
+import { showLoading, hideLoading, showError, showNotification } from '../modules/ui.js';
 
 let allCourses = [];
 let currentPage = 1;
@@ -6,6 +6,7 @@ let totalPages = 1;
 let currentSearch = '';
 let currentCategory = '';
 let currentPriceRange = '';
+let currentSort = 'title_asc';
 
 export async function renderCourses() {
     const app = document.getElementById('app');
@@ -29,6 +30,13 @@ export async function renderCourses() {
                     <option value="0-1000">до 1000 BYN</option>
                     <option value="1000-1500">1000 - 1500 BYN</option>
                     <option value="1500-2000">1500 - 2000 BYN</option>
+                </select>
+
+                <select id="sortFilter">
+                    <option value="title_asc">По названию (А-Я)</option>
+                    <option value="title_desc">По названию (Я-А)</option>
+                    <option value="price_asc">По цене (сначала дешевые)</option>
+                    <option value="price_desc">По цене (сначала дорогие)</option>
                 </select>
 
                 <button id="searchBtn">Найти</button>
@@ -60,6 +68,10 @@ export async function renderCourses() {
         currentPage = 1;
         filterCourses();
     });
+    document.getElementById('sortFilter').addEventListener('change', () => {
+        currentPage = 1;
+        filterCourses();
+    });
 }
 
 async function loadCourses() {
@@ -73,6 +85,7 @@ async function loadCourses() {
         if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
         if (currentCategory) url += `&category=${currentCategory}`;
         if (currentPriceRange) url += `&price_range=${currentPriceRange}`;
+        if (currentSort) url += `&sort=${currentSort}`;
 
         const res = await fetch(url);
         const data = await res.json();
@@ -98,6 +111,8 @@ function displayCourses(courses) {
         return;
     }
 
+    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
     container.innerHTML = courses.map(course => `
         <div class="course-card" data-id="${course.id}">
             <h3>${escapeHtml(course.title)}</h3>
@@ -105,9 +120,20 @@ function displayCourses(courses) {
             <p>💰 Цена: ${course.price} BYN</p>
             <p>⏱ Длительность: ${course.duration}</p>
             <p>📚 Категория: ${course.category}</p>
+            <button class="favorite-btn ${favorites.includes(course.id) ? 'active' : ''}" data-id="${course.id}">
+                ${favorites.includes(course.id) ? '★ В избранном' : '☆ В избранное'}
+            </button>
             <a href="/courses/${course.id}" class="btn">Подробнее</a>
         </div>
     `).join('');
+
+    document.querySelectorAll('.favorite-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const courseId = parseInt(btn.dataset.id);
+            toggleFavorite(courseId);
+        });
+    });
 }
 
 function renderPagination() {
@@ -147,7 +173,23 @@ function filterCourses() {
     currentSearch = document.getElementById('searchInput').value.toLowerCase();
     currentCategory = document.getElementById('categoryFilter').value;
     currentPriceRange = document.getElementById('priceFilter').value;
+    currentSort = document.getElementById('sortFilter').value;
     loadCourses();
+}
+
+function toggleFavorite(courseId) {
+    let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+
+    if (favorites.includes(courseId)) {
+        favorites = favorites.filter(id => id !== courseId);
+        showNotification('Удалено из избранного', 'info');
+    } else {
+        favorites.push(courseId);
+        showNotification('Добавлено в избранное', 'success');
+    }
+
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+    displayCourses(allCourses);
 }
 
 function escapeHtml(text) {
