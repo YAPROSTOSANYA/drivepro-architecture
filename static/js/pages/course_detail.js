@@ -4,10 +4,15 @@ export async function renderCourseDetail(courseId) {
     const app = document.getElementById('app');
     app.innerHTML = `
         <div class="course-detail-container">
-            <div id="course-detail"></div>
-            <button id="applyBtn" class="btn">Записаться на курс</button>
+            <button id="backBtn" class="btn-back">← Назад к курсам</button>
+            <div id="course-detail" class="course-detail-content"></div>
+            <button id="applyBtn" class="btn btn-primary">Записаться на курс</button>
         </div>
     `;
+
+    document.getElementById('backBtn').onclick = () => {
+        window.location.href = '/courses';
+    };
 
     await loadCourseDetail(courseId);
 
@@ -42,11 +47,15 @@ async function loadCourseDetail(courseId) {
         hideLoading('course-detail');
 
         container.innerHTML = `
-            <h2>${escapeHtml(course.title)}</h2>
-            <p>${escapeHtml(course.description)}</p>
-            <p>💰 Цена: ${course.price} BYN</p>
-            <p>⏱ Длительность: ${course.duration}</p>
-            <p>📚 Категория: ${course.category}</p>
+            <div class="course-detail-card">
+                <h2>${escapeHtml(course.title)}</h2>
+                <p class="course-description">${escapeHtml(course.description)}</p>
+                <div class="course-info">
+                    <p><span class="info-label">💰 Цена:</span> <span class="info-value">${course.price} BYN</span></p>
+                    <p><span class="info-label">⏱ Длительность:</span> <span class="info-value">${course.duration}</span></p>
+                    <p><span class="info-label">📚 Категория:</span> <span class="info-value">${course.category}</span></p>
+                </div>
+            </div>
         `;
     } catch (error) {
         hideLoading('course-detail');
