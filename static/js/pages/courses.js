@@ -1,4 +1,4 @@
-import { showLoading, hideLoading, showError, showNotification } from '../modules/ui.js';
+import { showLoading, hideLoading, showError } from '../modules/ui.js';
 
 let allCourses = [];
 let currentPage = 1;
@@ -98,8 +98,6 @@ function displayCourses(courses) {
         return;
     }
 
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-
     container.innerHTML = courses.map(course => `
         <div class="course-card" data-id="${course.id}">
             <h3>${escapeHtml(course.title)}</h3>
@@ -107,20 +105,9 @@ function displayCourses(courses) {
             <p>💰 Цена: ${course.price} BYN</p>
             <p>⏱ Длительность: ${course.duration}</p>
             <p>📚 Категория: ${course.category}</p>
-            <button class="favorite-btn ${favorites.includes(course.id) ? 'active' : ''}" data-id="${course.id}">
-                ${favorites.includes(course.id) ? '★ В избранном' : '☆ В избранное'}
-            </button>
             <a href="/courses/${course.id}" class="btn">Подробнее</a>
         </div>
     `).join('');
-
-    document.querySelectorAll('.favorite-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const courseId = parseInt(btn.dataset.id);
-            toggleFavorite(courseId);
-        });
-    });
 }
 
 function renderPagination() {
@@ -161,21 +148,6 @@ function filterCourses() {
     currentCategory = document.getElementById('categoryFilter').value;
     currentPriceRange = document.getElementById('priceFilter').value;
     loadCourses();
-}
-
-function toggleFavorite(courseId) {
-    let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-
-    if (favorites.includes(courseId)) {
-        favorites = favorites.filter(id => id !== courseId);
-        showNotification('Удалено из избранного', 'info');
-    } else {
-        favorites.push(courseId);
-        showNotification('Добавлено в избранное', 'success');
-    }
-
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-    displayCourses(allCourses);
 }
 
 function escapeHtml(text) {

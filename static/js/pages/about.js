@@ -4,7 +4,7 @@ export function renderAbout() {
         <div class="about-container">
             <div class="about-header">
                 <h1>О нашей автошколе</h1>
-                <p>Мы делаем обучение вождению комфортным и эффективным</p>
+                <p class="about-subtitle">Мы делаем обучение вождению комфортным и эффективным</p>
             </div>
 
             <div class="about-content">

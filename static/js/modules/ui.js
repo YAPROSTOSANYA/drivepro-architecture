@@ -62,7 +62,6 @@ export function renderNav(user) {
             <a href="/about">О школе</a>
             <a href="/courses">Курсы</a>
             <a href="/profile">Профиль</a>
-            <a href="/applications">Мои заявки</a>
             <a href="/apply">Записаться</a>
             ${user.email === 'admin@example.com' ? '<a href="/admin">Админ</a>' : ''}
             <span>Привет, ${user.name}</span>

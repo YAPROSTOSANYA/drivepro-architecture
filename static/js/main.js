@@ -46,8 +46,8 @@ export function renderForgotPassword() {
     app.innerHTML = `
         <div class="form-container">
             <h2>Восстановление пароля</h2>
-            <input type="email" id="email" placeholder="Email">
-            <button onclick="forgotPassword()">Отправить</button>
+            <input type="email" id="reset_email" placeholder="Email">
+            <button onclick="sendResetLink()">Отправить ссылку для сброса</button>
             <p><a href="/auth/login">Вернуться ко входу</a></p>
         </div>
     `;
@@ -57,15 +57,26 @@ export function renderResetPassword() {
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
 
+    if (!token) {
+        document.getElementById('app').innerHTML = '<div class="form-container"><h2>Ошибка</h2><p>Неверная ссылка для сброса пароля</p><a href="/auth/login">Вернуться ко входу</a></div>';
+        return;
+    }
+
     const app = document.getElementById('app');
     app.innerHTML = `
         <div class="form-container">
             <h2>Сброс пароля</h2>
             <input type="password" id="new_password" placeholder="Новый пароль">
             <input type="password" id="confirm_password" placeholder="Подтвердите пароль">
+            <div id="password-strength" class="password-strength"></div>
             <button onclick="resetPassword('${token}')">Сменить пароль</button>
         </div>
     `;
+
+    const passwordInput = document.getElementById('new_password');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', checkPasswordStrengthReset);
+    }
 }
 
 export function renderCabinet() {
@@ -92,6 +103,24 @@ setRenderFunctions(renderLogin, renderRegister, renderCabinet);
 
 function checkPasswordStrength() {
     const password = document.getElementById('password')?.value || '';
+    const strengthDiv = document.getElementById('password-strength');
+    if (!strengthDiv) return;
+
+    let strength = 0;
+    if (password.length >= 6) strength++;
+    if (password.match(/[A-Z]/)) strength++;
+    if (password.match(/[0-9]/)) strength++;
+    if (password.match(/[^A-Za-z0-9]/)) strength++;
+
+    const messages = ['Очень слабый', 'Слабый', 'Средний', 'Хороший', 'Сильный'];
+    const colors = ['#e53e3e', '#ed8936', '#ecc94b', '#48bb78', '#38a169'];
+
+    strengthDiv.textContent = messages[strength] || '';
+    strengthDiv.style.color = colors[strength] || '#666';
+}
+
+function checkPasswordStrengthReset() {
+    const password = document.getElementById('new_password')?.value || '';
     const strengthDiv = document.getElementById('password-strength');
     if (!strengthDiv) return;
 
@@ -163,7 +192,7 @@ window.login = async function() {
     const data = await res.json();
 
     if (data.success) {
-        window.location.href = '/cabinet';
+        window.location.href = '/profile';
     } else {
         showNotification(data.message, 'error');
     }
@@ -211,11 +240,16 @@ window.register = async function() {
     }
 };
 
-window.forgotPassword = async function() {
-    const email = document.getElementById('email')?.value;
+window.sendResetLink = async function() {
+    const email = document.getElementById('reset_email')?.value;
 
     if (!email) {
         showNotification('Введите email', 'error');
+        return;
+    }
+
+    if (!validateEmail(email)) {
+        showNotification('Введите корректный email', 'error');
         return;
     }
 
@@ -225,9 +259,14 @@ window.forgotPassword = async function() {
         body: JSON.stringify({ email })
     });
     const data = await res.json();
-    showNotification(data.message, data.success ? 'success' : 'error');
-    if (data.reset_token) {
-        showNotification(`Демо-токен: ${data.reset_token} (сохраните его)`, 'info');
+
+    if (data.success) {
+        showNotification(data.message, 'success');
+        if (data.reset_token) {
+            showNotification(`Ваш токен для сброса: ${data.reset_token}. Перейдите на страницу /auth/reset-password?token=${data.reset_token}`, 'info');
+        }
+    } else {
+        showNotification(data.message, 'error');
     }
 };
 

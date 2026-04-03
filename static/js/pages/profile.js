@@ -1,8 +1,9 @@
+import { showNotification } from '../modules/ui.js';
+
 export async function renderProfile() {
     const app = document.getElementById('app');
     const user = window.currentUser;
 
-    // Загружаем заявки пользователя
     const res = await fetch('/api/applications');
     const applications = await res.json();
 
@@ -30,6 +31,23 @@ export async function renderProfile() {
             </div>
         </div>
     `;
+
+    // Добавляем обработчики для кнопок отмены
+    document.querySelectorAll('.cancel-application-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const applicationId = btn.dataset.id;
+            if (confirm('Отменить заявку?')) {
+                const res = await fetch(`/api/applications/${applicationId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showNotification('Заявка отменена', 'success');
+                    renderProfile(); // Обновляем страницу
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            }
+        });
+    });
 }
 
 function renderApplicationsList(applications) {
@@ -42,6 +60,7 @@ function renderApplicationsList(applications) {
             <p><strong>Курс ID:</strong> ${app.course_id}</p>
             <p><strong>Статус:</strong> <span class="status-${app.status}">${app.status === 'pending' ? 'На рассмотрении' : app.status}</span></p>
             <p><strong>Дата подачи:</strong> ${new Date(app.created_at).toLocaleDateString()}</p>
+            <button class="btn cancel-application-btn" data-id="${app.id}">Отменить заявку</button>
         </div>
     `).join('');
 }

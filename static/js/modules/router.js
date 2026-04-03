@@ -4,7 +4,6 @@ import { renderAbout } from '../pages/about.js';
 import { renderCourses } from '../pages/courses.js';
 import { renderCourseDetail } from '../pages/course_detail.js';
 import { renderProfile } from '../pages/profile.js';
-import { renderApplications } from '../pages/applications.js';
 import { renderApply } from '../pages/apply.js';
 import { renderAdmin } from '../pages/admin.js';
 import { renderForgotPassword, renderResetPassword } from '../main.js';
@@ -18,7 +17,7 @@ export function setRenderFunctions(login, register, cabinet) {
 }
 
 const publicRoutes = ['/', '/about', '/courses', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password'];
-const privateRoutes = ['/cabinet', '/profile', '/applications', '/apply', '/admin'];
+const privateRoutes = ['/profile', '/apply', '/admin'];
 
 export async function router() {
     const path = window.location.pathname;
@@ -40,8 +39,6 @@ export async function router() {
         renderCourseDetail(courseId);
     } else if (path === '/profile') {
         renderProfile();
-    } else if (path === '/applications') {
-        renderApplications();
     } else if (path === '/apply') {
         renderApply();
     } else if (path === '/admin') {
