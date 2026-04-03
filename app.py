@@ -36,6 +36,24 @@ class Item(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class Course(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(500))
+    price = db.Column(db.Integer)
+    duration = db.Column(db.String(50))
+    category = db.Column(db.String(50))
+    image = db.Column(db.String(200))
+
+
+class Application(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    status = db.Column(db.String(20), default='pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 # Создание таблиц
 with app.app_context():
     db.create_all()
@@ -43,7 +61,46 @@ with app.app_context():
 
 
 # ================= СТРАНИЦЫ ФРОНТЕНДА =================
-# Страницы аутентификации (по требованию лабы)
+@app.route('/')
+def home_page():
+    return render_template('main.html', page='home')
+
+
+@app.route('/about')
+def about_page():
+    return render_template('main.html', page='about')
+
+
+@app.route('/courses')
+def courses_page():
+    return render_template('main.html', page='courses')
+
+
+@app.route('/courses/<int:course_id>')
+def course_detail_page(course_id):
+    return render_template('main.html', page='course_detail')
+
+
+@app.route('/profile')
+def profile_page():
+    return render_template('main.html', page='profile')
+
+
+@app.route('/applications')
+def applications_page():
+    return render_template('main.html', page='applications')
+
+
+@app.route('/apply')
+def apply_page():
+    return render_template('main.html', page='apply')
+
+
+@app.route('/admin')
+def admin_page():
+    return render_template('main.html', page='admin')
+
+
 @app.route('/auth/login')
 def auth_login_page():
     return render_template('main.html', page='login')
@@ -54,18 +111,6 @@ def auth_register_page():
     return render_template('main.html', page='register')
 
 
-# Дополнительно оставляем старые URL для удобства (не мешает)
-@app.route('/')
-def login_page():
-    return render_template('main.html', page='login')
-
-
-@app.route('/register')
-def register_page():
-    return render_template('main.html', page='register')
-
-
-# Приватная страница
 @app.route('/cabinet')
 def cabinet_page():
     if 'user_id' not in session:
@@ -79,15 +124,12 @@ def register():
     try:
         data = request.get_json()
 
-        # Валидация
         if not data.get('email') or not data.get('password') or not data.get('name'):
             return jsonify({'success': False, 'message': 'Все поля обязательны'}), 400
 
-        # Проверка существующего пользователя
         if User.query.filter_by(email=data['email']).first():
             return jsonify({'success': False, 'message': 'Пользователь уже существует'}), 400
 
-        # Создание пользователя
         user = User(email=data['email'], name=data['name'])
         user.set_password(data['password'])
 
@@ -105,18 +147,14 @@ def login():
     try:
         data = request.get_json()
 
-        # Валидация
         if not data.get('email') or not data.get('password'):
             return jsonify({'success': False, 'message': 'Email и пароль обязательны'}), 400
 
-        # Поиск пользователя
         user = User.query.filter_by(email=data['email']).first()
 
-        # Проверка пароля
         if not user or not user.check_password(data['password']):
             return jsonify({'success': False, 'message': 'Неверный email или пароль'}), 401
 
-        # Сохраняем в сессию
         session['user_id'] = user.id
         session['user_name'] = user.name
 
@@ -160,10 +198,9 @@ def logout():
     return jsonify({'success': True, 'message': 'Выход выполнен'}), 200
 
 
-# ================= API ДЛЯ ITEMS (CRUD) =================
+# ================= API ДЛЯ ITEMS =================
 @app.route('/api/items', methods=['GET'])
 def get_items():
-    # Проверка авторизации
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
 
@@ -182,18 +219,15 @@ def get_items():
 
 @app.route('/api/items', methods=['POST'])
 def create_item():
-    # Проверка авторизации
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
 
     try:
         data = request.get_json()
 
-        # Валидация
         if not data.get('title'):
             return jsonify({'success': False, 'message': 'Название обязательно'}), 400
 
-        # Создание элемента
         item = Item(
             title=data['title'],
             description=data.get('description', ''),
@@ -219,22 +253,95 @@ def create_item():
 
 @app.route('/api/items/<int:item_id>', methods=['DELETE'])
 def delete_item(item_id):
-    # Проверка авторизации
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
 
     try:
-        # Поиск элемента
         item = Item.query.filter_by(id=item_id, user_id=session['user_id']).first()
 
         if not item:
             return jsonify({'success': False, 'message': 'Элемент не найден'}), 404
 
-        # Удаление
         db.session.delete(item)
         db.session.commit()
 
         return jsonify({'success': True, 'message': 'Элемент удален'}), 200
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ================= API КУРСОВ =================
+@app.route('/api/courses', methods=['GET'])
+def get_courses():
+    courses = Course.query.all()
+    return jsonify([{
+        'id': c.id,
+        'title': c.title,
+        'description': c.description,
+        'price': c.price,
+        'duration': c.duration,
+        'category': c.category,
+        'image': c.image
+    } for c in courses]), 200
+
+
+@app.route('/api/courses/<int:course_id>', methods=['GET'])
+def get_course(course_id):
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({'success': False, 'message': 'Курс не найден'}), 404
+    return jsonify({
+        'id': course.id,
+        'title': course.title,
+        'description': course.description,
+        'price': course.price,
+        'duration': course.duration,
+        'category': course.category,
+        'image': course.image
+    }), 200
+
+
+# ================= API ЗАЯВОК =================
+@app.route('/api/applications', methods=['GET'])
+def get_applications():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    apps = Application.query.filter_by(user_id=session['user_id']).all()
+    return jsonify([{
+        'id': a.id,
+        'course_id': a.course_id,
+        'status': a.status,
+        'created_at': a.created_at.isoformat()
+    } for a in apps]), 200
+
+
+@app.route('/api/applications', methods=['POST'])
+def create_application():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    try:
+        data = request.get_json()
+        course_id = data.get('course_id')
+
+        if not course_id:
+            return jsonify({'success': False, 'message': 'ID курса обязателен'}), 400
+
+        course = Course.query.get(course_id)
+        if not course:
+            return jsonify({'success': False, 'message': 'Курс не найден'}), 404
+
+        existing = Application.query.filter_by(user_id=session['user_id'], course_id=course_id).first()
+        if existing:
+            return jsonify({'success': False, 'message': 'Вы уже записаны на этот курс'}), 400
+
+        app_entry = Application(user_id=session['user_id'], course_id=course_id)
+        db.session.add(app_entry)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Заявка подана'}), 201
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
