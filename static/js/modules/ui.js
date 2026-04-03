@@ -5,8 +5,48 @@ export function showLoading(containerId) {
     }
 }
 
+export function hideLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        const loader = container.querySelector('.loader');
+        if (loader) loader.remove();
+    }
+}
+
 export function showError(message) {
-    alert(message);
+    showNotification(message, 'error');
+}
+
+export function showSuccess(message) {
+    showNotification(message, 'success');
+}
+
+export function showNotification(message, type = 'info') {
+    const existing = document.querySelector('.toast-notification');
+    if (existing) existing.remove();
+
+    const notification = document.createElement('div');
+    notification.className = `toast-notification ${type}`;
+    notification.innerHTML = `
+        <span>${escapeHtml(message)}</span>
+        <button class="toast-close">&times;</button>
+    `;
+
+    document.body.appendChild(notification);
+
+    setTimeout(() => notification.classList.add('show'), 10);
+
+    notification.querySelector('.toast-close').onclick = () => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    };
+
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 4000);
 }
 
 export function renderNav(user) {
@@ -35,4 +75,11 @@ export function renderNav(user) {
             <a href="/auth/register">Регистрация</a>
         `;
     }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
