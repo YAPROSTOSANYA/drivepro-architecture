@@ -18,18 +18,8 @@ export async function renderCourseDetail(courseId) {
 
     const applyBtn = document.getElementById('applyBtn');
     if (applyBtn) {
-        applyBtn.onclick = async () => {
-            const res = await fetch('/api/applications', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ course_id: courseId })
-            });
-            const data = await res.json();
-            if (data.success) {
-                showNotification('Заявка подана', 'success');
-            } else {
-                showNotification(data.message, 'error');
-            }
+        applyBtn.onclick = () => {
+            window.location.href = `/apply?course_id=${courseId}`;
         };
     }
 }

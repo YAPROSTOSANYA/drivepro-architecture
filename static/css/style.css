@@ -148,7 +148,7 @@ h2 {
     font-size: 12px;
     display: block;
     margin-top: -10px;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 /* Индикатор сложности пароля */
@@ -157,6 +157,18 @@ h2 {
     margin-top: -10px;
     margin-bottom: 15px;
     text-align: left;
+}
+
+.password-hint {
+    font-size: 12px;
+    color: #666;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+.password-hint small {
+    font-weight: bold;
 }
 
 /* Карточки */
@@ -380,6 +392,110 @@ h2 {
 
 .toast-close:hover {
     opacity: 0.8;
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    text-align: center;
+}
+
+.modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.modal-cancel {
+    background: #cbd5e0;
+    color: #333;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.modal-confirm {
+    background: #e53e3e;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.modal-confirm:hover {
+    background: #c53030;
+}
+
+.modal-apply-btn {
+    background: #667eea;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.modal-apply-btn:hover {
+    background: #5a67d8;
+}
+
+.course-modal-content {
+    text-align: left;
+    max-width: 450px;
+}
+
+.course-modal-content h2 {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.course-description-modal {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #555;
+    margin-bottom: 15px;
+}
+
+.course-info-modal {
+    background: #f7f7f7;
+    padding: 15px;
+    border-radius: 10px;
+    margin: 15px 0;
+}
+
+.course-info-modal p {
+    margin: 8px 0;
 }
 
 /* Главная страница */
@@ -679,6 +795,68 @@ h2 {
 
 .btn-primary:hover {
     background: #5a67d8;
+}
+
+/* Страница записи на курс */
+.apply-container {
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.apply-card {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.course-label {
+    display: block;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.course-select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+
+.course-select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-submit:hover {
+    transform: translateY(-2px);
+}
+
+.success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 15px;
+    text-align: center;
 }
 
 /* Адаптивность */

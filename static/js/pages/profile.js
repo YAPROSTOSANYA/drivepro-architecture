@@ -32,20 +32,11 @@ export async function renderProfile() {
         </div>
     `;
 
-    // Добавляем обработчики для кнопок отмены
     document.querySelectorAll('.cancel-application-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
+        btn.addEventListener('click', (e) => {
             const applicationId = btn.dataset.id;
-            if (confirm('Отменить заявку?')) {
-                const res = await fetch(`/api/applications/${applicationId}`, { method: 'DELETE' });
-                const data = await res.json();
-                if (data.success) {
-                    showNotification('Заявка отменена', 'success');
-                    renderProfile(); // Обновляем страницу
-                } else {
-                    showNotification(data.message, 'error');
-                }
-            }
+            const courseTitle = btn.dataset.title;
+            showConfirmModal(applicationId, courseTitle);
         });
     });
 }
@@ -60,9 +51,41 @@ function renderApplicationsList(applications) {
             <p><strong>Курс ID:</strong> ${app.course_id}</p>
             <p><strong>Статус:</strong> <span class="status-${app.status}">${app.status === 'pending' ? 'На рассмотрении' : app.status}</span></p>
             <p><strong>Дата подачи:</strong> ${new Date(app.created_at).toLocaleDateString()}</p>
-            <button class="btn cancel-application-btn" data-id="${app.id}">Отменить заявку</button>
+            <button class="cancel-application-btn" data-id="${app.id}" data-title="Курс ${app.course_id}">Отменить заявку</button>
         </div>
     `).join('');
+}
+
+function showConfirmModal(applicationId, courseTitle) {
+    const modal = document.createElement('div');
+    modal.className = 'modal confirm-modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h3>Подтверждение отмены</h3>
+            <p>Вы действительно хотите отменить заявку на "${courseTitle}"?</p>
+            <div class="modal-buttons">
+                <button class="modal-cancel">Нет, закрыть</button>
+                <button class="modal-confirm">Да, отменить</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+    modal.querySelector('.modal-cancel').onclick = () => modal.remove();
+    modal.querySelector('.modal-confirm').onclick = async () => {
+        const res = await fetch(`/api/applications/${applicationId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+            showNotification('Заявка отменена', 'success');
+            renderProfile();
+        } else {
+            showNotification(data.message, 'error');
+        }
+        modal.remove();
+    };
 }
 
 function escapeHtml(text) {

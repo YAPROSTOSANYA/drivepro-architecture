@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, render_template, session, redirect
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy import or_
 
 app = Flask(__name__)
@@ -159,12 +159,17 @@ def login():
         if not user or not user.check_password(data['password']):
             return jsonify({'success': False, 'message': 'Неверный email или пароль'}), 401
 
+        session.clear()
         session['user_id'] = user.id
         session['user_name'] = user.name
 
-        if data.get('remember_me'):
+        remember_me = data.get('remember_me', False)
+
+        if remember_me:
             session.permanent = True
-            app.config['PERMANENT_SESSION_LIFETIME'] = 30 * 24 * 3600
+            app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+        else:
+            session.permanent = False
 
         return jsonify({
             'success': True,

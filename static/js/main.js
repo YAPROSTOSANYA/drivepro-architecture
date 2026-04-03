@@ -11,13 +11,62 @@ export function renderLogin() {
             <input type="email" id="email" placeholder="Email">
             <input type="password" id="password" placeholder="Пароль">
             <label>
-                <input type="checkbox" id="remember_me"> Запомнить меня
+                <input type="checkbox" id="remember_me"> Запомнить пароль
             </label>
             <button onclick="login()">Войти</button>
-            <p><a href="/auth/forgot-password">Забыли пароль?</a></p>
+            <p><a href="#" id="forgotPasswordLink">Забыли пароль?</a></p>
             <p>Нет аккаунта? <a href="/auth/register">Регистрация</a></p>
         </div>
     `;
+
+    document.getElementById('forgotPasswordLink').onclick = (e) => {
+        e.preventDefault();
+        showForgotPasswordModal();
+    };
+}
+
+function showForgotPasswordModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <span class="modal-close">&times;</span>
+            <h2>Восстановление пароля</h2>
+            <input type="email" id="modal_reset_email" placeholder="Email">
+            <button id="modal_send_reset">Отправить ссылку</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+
+    modal.querySelector('.modal-close').onclick = () => {
+        modal.remove();
+    };
+
+    modal.querySelector('#modal_send_reset').onclick = async () => {
+        const email = document.getElementById('modal_reset_email').value;
+        if (!email) {
+            showNotification('Введите email', 'error');
+            return;
+        }
+
+        const res = await fetch('/api/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            showNotification(data.message, 'success');
+            if (data.reset_token) {
+                showNotification(`Ваш токен для сброса: ${data.reset_token}`, 'info');
+            }
+            modal.remove();
+        } else {
+            showNotification(data.message, 'error');
+        }
+    };
 }
 
 export function renderRegister() {
@@ -25,11 +74,24 @@ export function renderRegister() {
     app.innerHTML = `
         <div class="form-container">
             <h2>Регистрация</h2>
-            <input type="text" id="name" placeholder="Имя">
-            <input type="email" id="email" placeholder="Email">
-            <input type="password" id="password" placeholder="Пароль">
-            <input type="password" id="confirm_password" placeholder="Подтвердите пароль">
+            <div class="input-group">
+                <input type="text" id="name" placeholder="Имя">
+                <div id="name-error" class="error-container"></div>
+            </div>
+            <div class="input-group">
+                <input type="email" id="email" placeholder="Email">
+                <div id="email-error" class="error-container"></div>
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="Пароль">
+                <div id="password-error" class="error-container"></div>
+            </div>
+            <div class="input-group">
+                <input type="password" id="confirm_password" placeholder="Подтвердите пароль">
+                <div id="confirm_password-error" class="error-container"></div>
+            </div>
             <div id="password-strength" class="password-strength"></div>
+            <div id="password-hint" class="password-hint"></div>
             <button onclick="register()">Зарегистрироваться</button>
             <p>Уже есть аккаунт? <a href="/auth/login">Вход</a></p>
         </div>
@@ -42,15 +104,7 @@ export function renderRegister() {
 }
 
 export function renderForgotPassword() {
-    const app = document.getElementById('app');
-    app.innerHTML = `
-        <div class="form-container">
-            <h2>Восстановление пароля</h2>
-            <input type="email" id="reset_email" placeholder="Email">
-            <button onclick="sendResetLink()">Отправить ссылку для сброса</button>
-            <p><a href="/auth/login">Вернуться ко входу</a></p>
-        </div>
-    `;
+    // Удаляем старую страницу восстановления, используем модальное окно
 }
 
 export function renderResetPassword() {
@@ -104,19 +158,69 @@ setRenderFunctions(renderLogin, renderRegister, renderCabinet);
 function checkPasswordStrength() {
     const password = document.getElementById('password')?.value || '';
     const strengthDiv = document.getElementById('password-strength');
+    const hintDiv = document.getElementById('password-hint');
     if (!strengthDiv) return;
 
+    if (password.length === 0) {
+        strengthDiv.textContent = '';
+        if (hintDiv) hintDiv.textContent = '';
+        return;
+    }
+
     let strength = 0;
-    if (password.length >= 6) strength++;
-    if (password.match(/[A-Z]/)) strength++;
-    if (password.match(/[0-9]/)) strength++;
-    if (password.match(/[^A-Za-z0-9]/)) strength++;
+    let hints = [];
+
+    if (password.length >= 6) {
+        strength++;
+    } else {
+        hints.push('• минимум 6 символов');
+    }
+
+    if (password.match(/[A-Z]/)) {
+        strength++;
+    } else {
+        hints.push('• хотя бы одну заглавную букву (A-Z)');
+    }
+
+    if (password.match(/[a-z]/)) {
+        strength++;
+    } else {
+        hints.push('• хотя бы одну строчную букву (a-z)');
+    }
+
+    if (password.match(/[0-9]/)) {
+        strength++;
+    } else {
+        hints.push('• хотя бы одну цифру');
+    }
+
+    if (password.match(/[@$!%*?&]/)) {
+        strength++;
+    } else {
+        hints.push('• хотя бы один спецсимвол (@$!%*?&)');
+    }
 
     const messages = ['Очень слабый', 'Слабый', 'Средний', 'Хороший', 'Сильный'];
     const colors = ['#e53e3e', '#ed8936', '#ecc94b', '#48bb78', '#38a169'];
 
-    strengthDiv.textContent = messages[strength] || '';
-    strengthDiv.style.color = colors[strength] || '#666';
+    if (strength <= 2) {
+        strengthDiv.textContent = messages[0];
+        strengthDiv.style.color = colors[0];
+    } else {
+        const index = Math.min(strength - 2, messages.length - 1);
+        strengthDiv.textContent = messages[index];
+        strengthDiv.style.color = colors[index];
+    }
+
+    if (hintDiv && hints.length > 0 && strength < 5) {
+        hintDiv.innerHTML = '<small>Пароль должен содержать:</small><br>' + hints.join('<br>');
+        hintDiv.style.color = '#666';
+        hintDiv.style.fontSize = '12px';
+        hintDiv.style.marginTop = '-10px';
+        hintDiv.style.marginBottom = '10px';
+    } else if (hintDiv) {
+        hintDiv.innerHTML = '';
+    }
 }
 
 function checkPasswordStrengthReset() {
@@ -124,17 +228,30 @@ function checkPasswordStrengthReset() {
     const strengthDiv = document.getElementById('password-strength');
     if (!strengthDiv) return;
 
+    if (password.length === 0) {
+        strengthDiv.textContent = '';
+        return;
+    }
+
     let strength = 0;
+
     if (password.length >= 6) strength++;
     if (password.match(/[A-Z]/)) strength++;
+    if (password.match(/[a-z]/)) strength++;
     if (password.match(/[0-9]/)) strength++;
-    if (password.match(/[^A-Za-z0-9]/)) strength++;
+    if (password.match(/[@$!%*?&]/)) strength++;
 
     const messages = ['Очень слабый', 'Слабый', 'Средний', 'Хороший', 'Сильный'];
     const colors = ['#e53e3e', '#ed8936', '#ecc94b', '#48bb78', '#38a169'];
 
-    strengthDiv.textContent = messages[strength] || '';
-    strengthDiv.style.color = colors[strength] || '#666';
+    if (strength <= 2) {
+        strengthDiv.textContent = messages[0];
+        strengthDiv.style.color = colors[0];
+    } else {
+        const index = Math.min(strength - 2, messages.length - 1);
+        strengthDiv.textContent = messages[index];
+        strengthDiv.style.color = colors[index];
+    }
 }
 
 async function loadItems() {
@@ -217,7 +334,7 @@ window.register = async function() {
     }
 
     if (!validatePassword(password)) {
-        showValidationError('password', 'Пароль должен содержать минимум 6 символов, включая буквы и цифры');
+        showValidationError('password', 'Пароль должен содержать минимум 6 символов, заглавную и строчную буквы, цифру и спецсимвол (@$!%*?&)');
         isValid = false;
     }
 
@@ -285,7 +402,7 @@ window.resetPassword = async function(token) {
     }
 
     if (!validatePassword(newPassword)) {
-        showNotification('Пароль должен содержать минимум 6 символов, включая буквы и цифры', 'error');
+        showNotification('Пароль должен содержать минимум 6 символов, заглавную и строчную буквы, цифру и спецсимвол (@$!%*?&)', 'error');
         return;
     }
 

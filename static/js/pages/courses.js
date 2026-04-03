@@ -123,7 +123,7 @@ function displayCourses(courses) {
             <button class="favorite-btn ${favorites.includes(course.id) ? 'active' : ''}" data-id="${course.id}">
                 ${favorites.includes(course.id) ? '★ В избранном' : '☆ В избранное'}
             </button>
-            <a href="/courses/${course.id}" class="btn">Подробнее</a>
+            <button class="btn detail-btn" data-id="${course.id}">Подробнее</button>
         </div>
     `).join('');
 
@@ -134,6 +134,45 @@ function displayCourses(courses) {
             toggleFavorite(courseId);
         });
     });
+
+    document.querySelectorAll('.detail-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const courseId = btn.dataset.id;
+            await showCourseModal(courseId);
+        });
+    });
+}
+
+async function showCourseModal(courseId) {
+    try {
+        const res = await fetch(`/api/courses/${courseId}`);
+        const course = await res.json();
+
+        const modal = document.createElement('div');
+        modal.className = 'modal course-modal';
+        modal.innerHTML = `
+            <div class="modal-content course-modal-content">
+                <span class="modal-close">&times;</span>
+                <h2>${escapeHtml(course.title)}</h2>
+                <p class="course-description-modal">${escapeHtml(course.description)}</p>
+                <div class="course-info-modal">
+                    <p><strong>💰 Цена:</strong> ${course.price} BYN</p>
+                    <p><strong>⏱ Длительность:</strong> ${course.duration}</p>
+                    <p><strong>📚 Категория:</strong> ${course.category}</p>
+                </div>
+                <button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.style.display = 'flex';
+
+        modal.querySelector('.modal-close').onclick = () => modal.remove();
+        modal.querySelector('.modal-apply-btn').onclick = () => {
+            window.location.href = `/apply?course_id=${courseId}`;
+        };
+    } catch (error) {
+        showError('Ошибка загрузки курса');
+    }
 }
 
 function renderPagination() {

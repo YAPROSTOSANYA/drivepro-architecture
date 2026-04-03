@@ -26,15 +26,14 @@ export async function logout() {
 
 window.logout = logout;
 
-// Функции валидации
 export function validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 }
 
 export function validatePassword(password) {
-    // минимум 6 символов, хотя бы одна цифра и одна буква
-    const re = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
+    // Минимум 6 символов, заглавная, строчная, цифра, спецсимвол
+    const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
     return re.test(password);
 }
 
@@ -45,22 +44,26 @@ export function validateName(name) {
 export function showValidationError(field, message) {
     const input = document.getElementById(field);
     if (input) {
+        // Удаляем существующую ошибку
         const existingError = input.parentElement?.querySelector('.error-message');
         if (existingError) existingError.remove();
 
         const errorSpan = document.createElement('span');
         errorSpan.className = 'error-message';
-        errorSpan.style.color = 'red';
+        errorSpan.style.color = '#e53e3e';
         errorSpan.style.fontSize = '12px';
         errorSpan.style.display = 'block';
-        errorSpan.style.marginTop = '-10px';
+        errorSpan.style.marginTop = '5px';
         errorSpan.style.marginBottom = '10px';
         errorSpan.innerText = message;
 
-        input.parentElement?.appendChild(errorSpan);
+        // Вставляем ошибку после поля ввода
+        input.insertAdjacentElement('afterend', errorSpan);
 
         setTimeout(() => {
-            errorSpan.remove();
+            if (errorSpan.parentElement) {
+                errorSpan.remove();
+            }
         }, 3000);
     }
 }
