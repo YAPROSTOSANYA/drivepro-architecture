@@ -1,9 +1,7 @@
-// Вспомогательные функции для UI
-
-export function showLoading() {
-    const app = document.getElementById('app');
-    if (app) {
-        app.innerHTML = '<div class="loader">Загрузка...</div>';
+export function showLoading(containerId) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '<div class="loader">Загрузка...</div>';
     }
 }
 
@@ -21,6 +19,10 @@ export function renderNav(user) {
             <a href="/about">О школе</a>
             <a href="/courses">Курсы</a>
             <a href="/cabinet">Кабинет</a>
+            <a href="/profile">Профиль</a>
+            <a href="/applications">Мои заявки</a>
+            <a href="/apply">Записаться</a>
+            ${user.email === 'admin@example.com' ? '<a href="/admin">Админ</a>' : ''}
             <span>Привет, ${user.name}</span>
             <button onclick="window.logout()">Выйти</button>
         `;

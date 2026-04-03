@@ -1,4 +1,4 @@
-import { showError, renderNav } from './ui.js';
+import { renderNav, showError } from './ui.js';
 
 export async function checkAuth() {
     try {

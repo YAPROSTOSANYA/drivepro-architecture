@@ -302,6 +302,32 @@ def get_course(course_id):
     }), 200
 
 
+@app.route('/api/courses', methods=['POST'])
+def create_course():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    user = User.query.get(session['user_id'])
+    if user.email != 'admin@example.com':
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+
+    try:
+        data = request.get_json()
+        course = Course(
+            title=data['title'],
+            description=data.get('description', ''),
+            price=data.get('price', 0),
+            duration=data.get('duration', ''),
+            category=data.get('category', ''),
+            image=data.get('image', '')
+        )
+        db.session.add(course)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Курс создан'}), 201
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
 # ================= API ЗАЯВОК =================
 @app.route('/api/applications', methods=['GET'])
 def get_applications():
@@ -345,6 +371,26 @@ def create_application():
 
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ================= ТЕСТОВЫЕ ДАННЫЕ =================
+@app.route('/seed')
+def seed():
+    if Course.query.count() == 0:
+        courses = [
+            Course(title='Категория B', description='Обучение на легковой автомобиль. Теория и практика.', price=25000,
+                   duration='2.5 месяца', category='basic'),
+            Course(title='Категория A', description='Обучение на мотоцикл. Для начинающих и опытных.', price=18000,
+                   duration='1.5 месяца', category='moto'),
+            Course(title='Категория C', description='Обучение на грузовой автомобиль. Профессиональная подготовка.',
+                   price=35000, duration='3 месяца', category='truck'),
+            Course(title='Категория D', description='Обучение на автобус. Для работы в пассажирских перевозках.',
+                   price=40000, duration='3.5 месяца', category='bus')
+        ]
+        db.session.add_all(courses)
+        db.session.commit()
+        return 'Курсы добавлены (4 шт.)'
+    return 'Курсы уже есть'
 
 
 if __name__ == '__main__':
