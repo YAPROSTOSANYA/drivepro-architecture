@@ -1,5 +1,6 @@
 import { router, setRenderFunctions } from './modules/router.js';
 import { checkAuth } from './modules/auth.js';
+import { validateEmail, validatePassword, validateName, showValidationError } from './modules/auth.js';
 import { showLoading } from './modules/ui.js';
 
 // Функции рендера (старые, для cabinet, login, register)
@@ -127,10 +128,26 @@ window.register = async function() {
     const name = document.getElementById('name')?.value;
     const email = document.getElementById('email')?.value;
     const password = document.getElementById('password')?.value;
-    if (!name || !email || !password) {
-        alert('Заполните все поля');
-        return;
+
+    // Валидация
+    let isValid = true;
+
+    if (!validateName(name)) {
+        showValidationError('name', 'Имя должно содержать минимум 2 символа');
+        isValid = false;
     }
+
+    if (!validateEmail(email)) {
+        showValidationError('email', 'Введите корректный email');
+        isValid = false;
+    }
+
+    if (!validatePassword(password)) {
+        showValidationError('password', 'Пароль должен содержать минимум 6 символов, включая буквы и цифры');
+        isValid = false;
+    }
+
+    if (!isValid) return;
 
     const res = await fetch('/api/auth/register', {
         method: 'POST',
