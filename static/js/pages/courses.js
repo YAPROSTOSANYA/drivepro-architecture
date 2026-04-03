@@ -19,10 +19,10 @@ export async function renderCourses() {
 
                 <select id="categoryFilter">
                     <option value="">Все категории</option>
-                    <option value="basic">Базовые</option>
-                    <option value="moto">Мото</option>
-                    <option value="truck">Грузовые</option>
-                    <option value="bus">Автобусы</option>
+                    <option value="Базовый">Базовый</option>
+                    <option value="Мото">Мото</option>
+                    <option value="Грузовой">Грузовой</option>
+                    <option value="Автобус">Автобус</option>
                 </select>
 
                 <select id="priceFilter">

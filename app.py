@@ -87,11 +87,6 @@ def profile_page():
     return render_template('main.html', page='profile')
 
 
-@app.route('/applications')
-def applications_page():
-    return render_template('main.html', page='applications')
-
-
 @app.route('/apply')
 def apply_page():
     return render_template('main.html', page='apply')
@@ -355,7 +350,6 @@ def get_courses():
             min_price, max_price = price_range.split('-')
             query = query.filter(Course.price >= int(min_price), Course.price <= int(max_price))
 
-    # Сортировка
     if sort == 'title_asc':
         query = query.order_by(Course.title.asc())
     elif sort == 'title_desc':
@@ -494,13 +488,13 @@ def seed():
     if Course.query.count() == 0:
         courses = [
             Course(title='Категория B', description='Обучение на легковой автомобиль. Теория и практика.', price=1200,
-                   duration='2.5 месяца', category='basic'),
+                   duration='2.5 месяца', category='Базовый'),
             Course(title='Категория A', description='Обучение на мотоцикл. Для начинающих и опытных.', price=800,
-                   duration='1.5 месяца', category='moto'),
+                   duration='1.5 месяца', category='Мото'),
             Course(title='Категория C', description='Обучение на грузовой автомобиль. Профессиональная подготовка.',
-                   price=1500, duration='3 месяца', category='truck'),
+                   price=1500, duration='3 месяца', category='Грузовой'),
             Course(title='Категория D', description='Обучение на автобус. Для работы в пассажирских перевозках.',
-                   price=1800, duration='3.5 месяца', category='bus')
+                   price=1800, duration='3.5 месяца', category='Автобус')
         ]
         db.session.add_all(courses)
         db.session.commit()
