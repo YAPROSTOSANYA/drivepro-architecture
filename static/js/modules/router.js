@@ -7,8 +7,8 @@ import { renderProfile } from '../pages/profile.js';
 import { renderApplications } from '../pages/applications.js';
 import { renderApply } from '../pages/apply.js';
 import { renderAdmin } from '../pages/admin.js';
+import { renderForgotPassword, renderResetPassword } from '../main.js';
 
-// Функции из старого main.js (пока оставляем)
 let renderLogin, renderRegister, renderCabinet;
 
 export function setRenderFunctions(login, register, cabinet) {
@@ -17,20 +17,18 @@ export function setRenderFunctions(login, register, cabinet) {
     renderCabinet = cabinet;
 }
 
-const publicRoutes = ['/', '/about', '/courses', '/auth/login', '/auth/register'];
+const publicRoutes = ['/', '/about', '/courses', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password'];
 const privateRoutes = ['/cabinet', '/profile', '/applications', '/apply', '/admin'];
 
 export async function router() {
     const path = window.location.pathname;
     const user = await checkAuth();
 
-    // Проверка приватных маршрутов
     if (privateRoutes.some(route => path.startsWith(route)) && !user) {
         window.location.href = '/auth/login';
         return;
     }
 
-    // Рендер страниц
     if (path === '/') {
         renderHome();
     } else if (path === '/about') {
@@ -52,6 +50,10 @@ export async function router() {
         if (renderLogin) renderLogin();
     } else if (path === '/auth/register') {
         if (renderRegister) renderRegister();
+    } else if (path === '/auth/forgot-password') {
+        if (renderForgotPassword) renderForgotPassword();
+    } else if (path === '/auth/reset-password') {
+        if (renderResetPassword) renderResetPassword();
     } else if (path === '/cabinet') {
         if (renderCabinet) renderCabinet();
     } else {
@@ -59,7 +61,6 @@ export async function router() {
     }
 }
 
-// Обработка кликов по ссылкам
 document.addEventListener('click', (e) => {
     const link = e.target.closest('a');
     if (link && link.getAttribute('href') && link.getAttribute('href').startsWith('/')) {

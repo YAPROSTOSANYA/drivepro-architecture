@@ -112,6 +112,16 @@ def auth_register_page():
     return render_template('main.html', page='register')
 
 
+@app.route('/auth/forgot-password')
+def forgot_password_page():
+    return render_template('main.html', page='forgot_password')
+
+
+@app.route('/auth/reset-password')
+def reset_password_page():
+    return render_template('main.html', page='reset_password')
+
+
 @app.route('/cabinet')
 def cabinet_page():
     if 'user_id' not in session:
@@ -197,6 +207,54 @@ def get_me():
 def logout():
     session.clear()
     return jsonify({'success': True, 'message': 'Выход выполнен'}), 200
+
+
+# ================= ВОССТАНОВЛЕНИЕ ПАРОЛЯ =================
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'success': False, 'message': 'Пользователь с таким email не найден'}), 404
+
+        reset_token = str(user.id) + "_" + str(int(datetime.utcnow().timestamp()))
+
+        return jsonify({
+            'success': True,
+            'message': 'Инструкция по восстановлению отправлена на email',
+            'reset_token': reset_token
+        }), 200
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    try:
+        data = request.get_json()
+        reset_token = data.get('reset_token')
+        new_password = data.get('new_password')
+
+        if not reset_token or not new_password:
+            return jsonify({'success': False, 'message': 'Все поля обязательны'}), 400
+
+        user_id = reset_token.split('_')[0]
+        user = User.query.get(user_id)
+
+        if not user:
+            return jsonify({'success': False, 'message': 'Неверный токен'}), 400
+
+        user.set_password(new_password)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Пароль успешно изменён'}), 200
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 # ================= API ДЛЯ ITEMS =================
