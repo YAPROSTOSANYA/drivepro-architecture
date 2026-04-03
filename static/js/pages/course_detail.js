@@ -21,9 +21,9 @@ export async function renderCourseDetail(courseId) {
             });
             const data = await res.json();
             if (data.success) {
-                alert('Заявка подана');
+                showNotification('Заявка подана', 'success');
             } else {
-                alert(data.message);
+                showNotification(data.message, 'error');
             }
         };
     }
@@ -44,7 +44,7 @@ async function loadCourseDetail(courseId) {
         container.innerHTML = `
             <h2>${escapeHtml(course.title)}</h2>
             <p>${escapeHtml(course.description)}</p>
-            <p>💰 Цена: ${course.price} руб.</p>
+            <p>💰 Цена: ${course.price} BYN</p>
             <p>⏱ Длительность: ${course.duration}</p>
             <p>📚 Категория: ${course.category}</p>
         `;

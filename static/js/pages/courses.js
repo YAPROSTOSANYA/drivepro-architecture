@@ -26,9 +26,9 @@ export async function renderCourses() {
 
                 <select id="priceFilter">
                     <option value="">Любая цена</option>
-                    <option value="0-20000">до 20000 руб.</option>
-                    <option value="20000-30000">20000 - 30000 руб.</option>
-                    <option value="30000-50000">30000 - 50000 руб.</option>
+                    <option value="0-1000">до 1000 BYN</option>
+                    <option value="1000-1500">1000 - 1500 BYN</option>
+                    <option value="1500-2000">1500 - 2000 BYN</option>
                 </select>
 
                 <button id="searchBtn">Найти</button>
@@ -104,7 +104,7 @@ function displayCourses(courses) {
         <div class="course-card" data-id="${course.id}">
             <h3>${escapeHtml(course.title)}</h3>
             <p>${escapeHtml(course.description)}</p>
-            <p>💰 Цена: ${course.price} руб.</p>
+            <p>💰 Цена: ${course.price} BYN</p>
             <p>⏱ Длительность: ${course.duration}</p>
             <p>📚 Категория: ${course.category}</p>
             <button class="favorite-btn ${favorites.includes(course.id) ? 'active' : ''}" data-id="${course.id}">
@@ -168,10 +168,10 @@ function toggleFavorite(courseId) {
 
     if (favorites.includes(courseId)) {
         favorites = favorites.filter(id => id !== courseId);
-        alert('Удалено из избранного');
+        showNotification('Удалено из избранного', 'info');
     } else {
         favorites.push(courseId);
-        alert('Добавлено в избранное');
+        showNotification('Добавлено в избранное', 'success');
     }
 
     localStorage.setItem('favorites', JSON.stringify(favorites));
