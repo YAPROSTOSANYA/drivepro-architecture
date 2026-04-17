@@ -61,6 +61,13 @@ class Application(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
+class Favorite(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
 # Создание таблиц
 with app.app_context():
     db.create_all()
@@ -577,6 +584,57 @@ def delete_application(application_id):
     db.session.commit()
 
     return jsonify({'success': True, 'message': 'Заявка отменена'}), 200
+
+
+# ================= API ИЗБРАННОГО =================
+@app.route('/api/favorites', methods=['GET'])
+def get_favorites():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    favorites = Favorite.query.filter_by(user_id=session['user_id']).all()
+    return jsonify([{
+        'id': f.id,
+        'course_id': f.course_id,
+        'created_at': f.created_at.isoformat()
+    } for f in favorites]), 200
+
+
+@app.route('/api/favorites', methods=['POST'])
+def add_favorite():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    data = request.get_json()
+    course_id = data.get('course_id')
+
+    if not course_id:
+        return jsonify({'success': False, 'message': 'ID курса обязателен'}), 400
+
+    existing = Favorite.query.filter_by(user_id=session['user_id'], course_id=course_id).first()
+    if existing:
+        return jsonify({'success': False, 'message': 'Уже в избранном'}), 400
+
+    favorite = Favorite(user_id=session['user_id'], course_id=course_id)
+    db.session.add(favorite)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': 'Добавлено в избранное'}), 201
+
+
+@app.route('/api/favorites/<int:course_id>', methods=['DELETE'])
+def remove_favorite(course_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    favorite = Favorite.query.filter_by(user_id=session['user_id'], course_id=course_id).first()
+    if not favorite:
+        return jsonify({'success': False, 'message': 'Не найдено в избранном'}), 404
+
+    db.session.delete(favorite)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': 'Удалено из избранного'}), 200
 
 
 # ================= ТЕСТОВЫЕ ДАННЫЕ =================

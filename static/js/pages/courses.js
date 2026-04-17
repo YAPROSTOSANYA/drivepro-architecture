@@ -7,6 +7,7 @@ let currentSearch = '';
 let currentCategory = '';
 let currentPriceRange = '';
 let currentSort = 'title_asc';
+let favoritesIds = [];
 
 export async function renderCourses() {
     const app = document.getElementById('app');
@@ -48,6 +49,7 @@ export async function renderCourses() {
         </div>
     `;
 
+    await loadFavorites();
     await loadCourses();
 
     document.getElementById('searchBtn').addEventListener('click', () => {
@@ -72,6 +74,24 @@ export async function renderCourses() {
         currentPage = 1;
         filterCourses();
     });
+}
+
+async function loadFavorites() {
+    const user = window.currentUser;
+    if (!user || user.role === 'admin') {
+        favoritesIds = [];
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/favorites');
+        if (res.ok) {
+            const favorites = await res.json();
+            favoritesIds = favorites.map(f => f.course_id);
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки избранного', error);
+    }
 }
 
 async function loadCourses() {
@@ -113,6 +133,7 @@ function displayCourses(courses) {
 
     const user = window.currentUser;
     const isAdmin = user && user.role === 'admin';
+    const isAuthenticated = user && !isAdmin;
 
     container.innerHTML = courses.map(course => `
         <div class="course-card" data-id="${course.id}">
@@ -121,32 +142,68 @@ function displayCourses(courses) {
             <p>💰 Цена: ${course.price} BYN</p>
             <p>⏱ Длительность: ${course.duration}</p>
             <p>📚 Категория: ${course.category}</p>
-            ${!isAdmin ? `
-                <div class="course-buttons">
-                    <button class="favorite-btn ${JSON.parse(localStorage.getItem('favorites') || '[]').includes(course.id) ? 'active' : ''}" data-id="${course.id}">
-                        ${JSON.parse(localStorage.getItem('favorites') || '[]').includes(course.id) ? '★ В избранном' : '☆ В избранное'}
+            <div class="course-buttons">
+                ${isAuthenticated ? `
+                    <button class="favorite-btn ${favoritesIds.includes(course.id) ? 'active' : ''}" data-id="${course.id}">
+                        ${favoritesIds.includes(course.id) ? '★ В избранном' : '☆ В избранное'}
                     </button>
-                    <button class="btn detail-btn" data-id="${course.id}">Подробнее</button>
-                </div>
-            ` : ''}
+                ` : ''}
+                <button class="btn detail-btn" data-id="${course.id}">Подробнее</button>
+            </div>
         </div>
     `).join('');
 
-    if (!isAdmin) {
+    if (isAuthenticated) {
         document.querySelectorAll('.favorite-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const courseId = parseInt(btn.dataset.id);
-                toggleFavorite(courseId);
+                await toggleFavorite(courseId, btn);
             });
         });
+    }
 
-        document.querySelectorAll('.detail-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const courseId = btn.dataset.id;
-                await showCourseModal(courseId);
-            });
+    document.querySelectorAll('.detail-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const courseId = btn.dataset.id;
+            await showCourseModal(courseId);
         });
+    });
+}
+
+async function toggleFavorite(courseId, btn) {
+    const isFavorite = favoritesIds.includes(courseId);
+
+    try {
+        let res;
+        if (isFavorite) {
+            res = await fetch(`/api/favorites/${courseId}`, { method: 'DELETE' });
+        } else {
+            res = await fetch('/api/favorites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ course_id: courseId })
+            });
+        }
+
+        const data = await res.json();
+
+        if (data.success) {
+            if (isFavorite) {
+                favoritesIds = favoritesIds.filter(id => id !== courseId);
+                btn.textContent = '☆ В избранное';
+                btn.classList.remove('active');
+            } else {
+                favoritesIds.push(courseId);
+                btn.textContent = '★ В избранном';
+                btn.classList.add('active');
+            }
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.message, 'error');
+        }
+    } catch (error) {
+        showNotification('Ошибка соединения', 'error');
     }
 }
 
@@ -157,7 +214,7 @@ async function showCourseModal(courseId) {
         const user = window.currentUser;
         const isAdmin = user && user.role === 'admin';
 
-        const applyButton = !isAdmin
+        const applyButton = user && !isAdmin
             ? `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`
             : '';
 
@@ -231,21 +288,6 @@ function filterCourses() {
     currentPriceRange = document.getElementById('priceFilter').value;
     currentSort = document.getElementById('sortFilter').value;
     loadCourses();
-}
-
-function toggleFavorite(courseId) {
-    let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-
-    if (favorites.includes(courseId)) {
-        favorites = favorites.filter(id => id !== courseId);
-        showNotification('Удалено из избранного', 'info');
-    } else {
-        favorites.push(courseId);
-        showNotification('Добавлено в избранное', 'success');
-    }
-
-    localStorage.setItem('favorites', JSON.stringify(favorites));
-    displayCourses(allCourses);
 }
 
 function escapeHtml(text) {

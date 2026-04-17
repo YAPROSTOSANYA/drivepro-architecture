@@ -24,6 +24,11 @@ export async function renderProfile() {
             </div>
 
             ${!isAdmin ? `
+            <div class="profile-favorites">
+                <h2>Избранные курсы</h2>
+                <div id="favorites-list" class="favorites-grid"></div>
+            </div>
+
             <div class="profile-applications">
                 <h2>Мои заявки на курсы</h2>
                 <div id="applications-list" class="applications-grid"></div>
@@ -33,7 +38,58 @@ export async function renderProfile() {
     `;
 
     if (!isAdmin) {
+        await loadFavorites();
         await loadApplications();
+    }
+}
+
+async function loadFavorites() {
+    const container = document.getElementById('favorites-list');
+    if (!container) return;
+
+    try {
+        const res = await fetch('/api/favorites');
+        const favorites = await res.json();
+
+        if (favorites.length === 0) {
+            container.innerHTML = '<p>У вас пока нет избранных курсов. Перейдите на <a href="/courses">страницу курсов</a> чтобы добавить.</p>';
+            return;
+        }
+
+        // Получаем данные о курсах
+        const coursesRes = await fetch('/api/courses');
+        const coursesData = await coursesRes.json();
+        const allCourses = coursesData.courses || coursesData;
+
+        const favoriteCourses = allCourses.filter(course =>
+            favorites.some(f => f.course_id === course.id)
+        );
+
+        container.innerHTML = favoriteCourses.map(course => `
+            <div class="favorite-card">
+                <h3>${escapeHtml(course.title)}</h3>
+                <p>${escapeHtml(course.description)}</p>
+                <p>💰 Цена: ${course.price} BYN</p>
+                <p>⏱ Длительность: ${course.duration}</p>
+                <button class="remove-favorite-btn" data-id="${course.id}">🗑 Удалить из избранного</button>
+            </div>
+        `).join('');
+
+        document.querySelectorAll('.remove-favorite-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const courseId = btn.dataset.id;
+                const res = await fetch(`/api/favorites/${courseId}`, { method: 'DELETE' });
+                const data = await res.json();
+                if (data.success) {
+                    showNotification('Удалено из избранного', 'success');
+                    loadFavorites();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            });
+        });
+    } catch (error) {
+        console.error('Ошибка загрузки избранного', error);
     }
 }
 
