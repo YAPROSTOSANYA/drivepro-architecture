@@ -1,11 +1,10 @@
-import { showLoading, showError } from '../modules/ui.js';
+import { showNotification } from '../modules/ui.js';
 
 export async function renderAdmin() {
     const user = window.currentUser;
 
-    // Простая проверка на админа (по email, можно расширить)
-    if (!user || user.email !== 'admin@example.com') {
-        document.getElementById('app').innerHTML = '<h2>Доступ запрещен</h2>';
+    if (!user || user.role !== 'admin') {
+        document.getElementById('app').innerHTML = '<div class="form-container"><h2>Доступ запрещен</h2><p>У вас нет прав администратора</p><a href="/">На главную</a></div>';
         return;
     }
 
@@ -13,46 +12,199 @@ export async function renderAdmin() {
     app.innerHTML = `
         <div class="admin-container">
             <h2>Админ-панель</h2>
-            <h3>Добавить курс</h3>
-            <input type="text" id="title" placeholder="Название">
-            <textarea id="description" placeholder="Описание"></textarea>
-            <input type="number" id="price" placeholder="Цена">
-            <input type="text" id="duration" placeholder="Длительность">
-            <input type="text" id="category" placeholder="Категория">
-            <button id="addCourseBtn">Добавить курс</button>
-            <div id="adminResult"></div>
+
+            <div class="admin-tabs">
+                <button class="tab-btn active" data-tab="courses">Управление курсами</button>
+                <button class="tab-btn" data-tab="applications">Заявки</button>
+                <button class="tab-btn" data-tab="users">Пользователи</button>
+            </div>
+
+            <div id="tab-courses" class="tab-content active">
+                <h3>Добавить курс</h3>
+                <div class="add-course-form">
+                    <input type="text" id="title" placeholder="Название курса">
+                    <textarea id="description" placeholder="Описание"></textarea>
+                    <input type="number" id="price" placeholder="Цена (BYN)">
+                    <input type="text" id="duration" placeholder="Длительность">
+                    <input type="text" id="category" placeholder="Категория">
+                    <button id="addCourseBtn">Добавить курс</button>
+                </div>
+
+                <h3>Список курсов</h3>
+                <div id="courses-list-admin"></div>
+            </div>
+
+            <div id="tab-applications" class="tab-content">
+                <h3>Все заявки</h3>
+                <div id="applications-list-admin"></div>
+            </div>
+
+            <div id="tab-users" class="tab-content">
+                <h3>Пользователи</h3>
+                <div id="users-list-admin"></div>
+            </div>
         </div>
     `;
 
-    document.getElementById('addCourseBtn').onclick = async () => {
-        const title = document.getElementById('title').value;
-        const description = document.getElementById('description').value;
-        const price = document.getElementById('price').value;
-        const duration = document.getElementById('duration').value;
-        const category = document.getElementById('category').value;
+    // Загрузка данных
+    await loadCoursesAdmin();
+    await loadApplicationsAdmin();
+    await loadUsersAdmin();
 
-        if (!title) {
-            alert('Название обязательно');
-            return;
-        }
+    // Табы
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+        };
+    });
 
-        const res = await fetch('/api/courses', {
-            method: 'POST',
+    document.getElementById('addCourseBtn').onclick = addCourse;
+}
+
+async function loadCoursesAdmin() {
+    const res = await fetch('/api/courses');
+    const courses = await res.json();
+    const container = document.getElementById('courses-list-admin');
+    if (!container) return;
+
+    if (courses.length === 0) {
+        container.innerHTML = '<p>Нет курсов</p>';
+        return;
+    }
+
+    container.innerHTML = courses.map(course => `
+        <div class="admin-course-card" data-id="${course.id}">
+            <h4>${escapeHtml(course.title)}</h4>
+            <p>${escapeHtml(course.description)}</p>
+            <p>💰 Цена: ${course.price} BYN | ⏱ ${course.duration} | 📚 ${course.category}</p>
+            <button class="edit-course-btn" data-id="${course.id}">Редактировать</button>
+            <button class="delete-course-btn" data-id="${course.id}">Удалить</button>
+        </div>
+    `).join('');
+
+    document.querySelectorAll('.delete-course-btn').forEach(btn => {
+        btn.onclick = async () => {
+            if (confirm('Удалить курс?')) {
+                const res = await fetch(`/api/courses/${btn.dataset.id}`, { method: 'DELETE' });
+                const data = await res.json();
+                showNotification(data.message, data.success ? 'success' : 'error');
+                if (data.success) loadCoursesAdmin();
+            }
+        };
+    });
+
+    document.querySelectorAll('.edit-course-btn').forEach(btn => {
+        btn.onclick = () => editCourse(btn.dataset.id);
+    });
+}
+
+async function editCourse(courseId) {
+    const res = await fetch(`/api/courses/${courseId}`);
+    const course = await res.json();
+
+    const newTitle = prompt('Новое название:', course.title);
+    if (newTitle) {
+        const res2 = await fetch(`/api/courses/${courseId}`, {
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description, price, duration, category })
+            body: JSON.stringify({ title: newTitle })
         });
-        const data = await res.json();
+        const data = await res2.json();
+        showNotification(data.message, data.success ? 'success' : 'error');
+        if (data.success) loadCoursesAdmin();
+    }
+}
 
-        const resultDiv = document.getElementById('adminResult');
-        if (data.success) {
-            resultDiv.innerHTML = '<p class="success">Курс добавлен</p>';
-            document.getElementById('title').value = '';
-            document.getElementById('description').value = '';
-            document.getElementById('price').value = '';
-            document.getElementById('duration').value = '';
-            document.getElementById('category').value = '';
-        } else {
-            resultDiv.innerHTML = `<p class="error">${data.message}</p>`;
-        }
-    };
+async function loadApplicationsAdmin() {
+    const res = await fetch('/api/admin/applications');
+    const apps = await res.json();
+    const container = document.getElementById('applications-list-admin');
+    if (!container) return;
+
+    if (apps.length === 0) {
+        container.innerHTML = '<p>Нет заявок</p>';
+        return;
+    }
+
+    container.innerHTML = apps.map(app => `
+        <div class="admin-application-card">
+            <p><strong>Пользователь:</strong> ${escapeHtml(app.user_name)} (${app.user_email})</p>
+            <p><strong>Курс:</strong> ${escapeHtml(app.course_title)}</p>
+            <p><strong>Статус:</strong>
+                <select class="status-select" data-id="${app.id}">
+                    <option value="pending" ${app.status === 'pending' ? 'selected' : ''}>Ожидает</option>
+                    <option value="approved" ${app.status === 'approved' ? 'selected' : ''}>Одобрена</option>
+                    <option value="rejected" ${app.status === 'rejected' ? 'selected' : ''}>Отклонена</option>
+                </select>
+            </p>
+            <p><strong>Дата:</strong> ${new Date(app.created_at).toLocaleDateString()}</p>
+        </div>
+    `).join('');
+
+    document.querySelectorAll('.status-select').forEach(select => {
+        select.onchange = async () => {
+            const res = await fetch(`/api/admin/applications/${select.dataset.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: select.value })
+            });
+            const data = await res.json();
+            showNotification(data.message, data.success ? 'success' : 'error');
+        };
+    });
+}
+
+async function loadUsersAdmin() {
+    const res = await fetch('/api/admin/users');
+    const users = await res.json();
+    const container = document.getElementById('users-list-admin');
+    if (!container) return;
+
+    container.innerHTML = users.map(user => `
+        <div class="admin-user-card">
+            <p><strong>${escapeHtml(user.name)}</strong> (${user.email})</p>
+            <p>Роль: ${user.role}</p>
+            <p>Дата регистрации: ${new Date(user.created_at).toLocaleDateString()}</p>
+        </div>
+    `).join('');
+}
+
+async function addCourse() {
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    const price = document.getElementById('price').value;
+    const duration = document.getElementById('duration').value;
+    const category = document.getElementById('category').value;
+
+    if (!title) {
+        showNotification('Введите название курса', 'error');
+        return;
+    }
+
+    const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description, price, duration, category })
+    });
+    const data = await res.json();
+    showNotification(data.message, data.success ? 'success' : 'error');
+
+    if (data.success) {
+        document.getElementById('title').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('duration').value = '';
+        document.getElementById('category').value = '';
+        loadCoursesAdmin();
+    }
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

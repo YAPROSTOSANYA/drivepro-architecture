@@ -57,13 +57,17 @@ export function renderNav(user) {
     if (!nav) return;
 
     if (user) {
+        let adminLink = '';
+        if (user.role === 'admin') {
+            adminLink = '<a href="/admin">Админ</a>';
+        }
         nav.innerHTML = `
             <a href="/">Главная</a>
             <a href="/about">О школе</a>
             <a href="/courses">Курсы</a>
             <a href="/profile">Профиль</a>
             <a href="/apply">Записаться</a>
-            ${user.email === 'admin@example.com' ? '<a href="/admin">Админ</a>' : ''}
+            ${adminLink}
             <span>Привет, ${user.name}</span>
             <button onclick="window.logout()">Выйти</button>
         `;

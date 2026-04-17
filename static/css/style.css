@@ -332,20 +332,6 @@ h2 {
     color: #666;
 }
 
-/* Админка */
-.admin-container input, .admin-container textarea, .admin-container select {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.admin-container textarea {
-    min-height: 100px;
-    resize: vertical;
-}
-
 /* Toast уведомления */
 .toast-notification {
     position: fixed;
@@ -680,6 +666,16 @@ h2 {
     font-weight: bold;
 }
 
+.status-approved {
+    color: #38a169;
+    font-weight: bold;
+}
+
+.status-rejected {
+    color: #e53e3e;
+    font-weight: bold;
+}
+
 .cancel-application-btn {
     background: #e53e3e;
     margin-top: 10px;
@@ -859,6 +855,74 @@ h2 {
     text-align: center;
 }
 
+/* Админ-панель */
+.admin-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+}
+
+.admin-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    color: #666;
+}
+
+.tab-btn.active {
+    color: #667eea;
+    border-bottom: 2px solid #667eea;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.admin-course-card, .admin-application-card, .admin-user-card {
+    background: #f7f7f7;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+}
+
+.admin-course-card button {
+    margin-right: 10px;
+    padding: 5px 10px;
+}
+
+.add-course-form input, .add-course-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.add-course-form textarea {
+    min-height: 80px;
+}
+
+.status-select {
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     body {
@@ -947,6 +1011,10 @@ h2 {
 
     .course-description {
         font-size: 16px;
+    }
+
+    .admin-tabs {
+        flex-direction: column;
     }
 }
 

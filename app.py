@@ -22,7 +22,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
-    role = db.Column(db.String(20), default='user')  # 'user' или 'admin'
+    role = db.Column(db.String(20), default='user')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -57,7 +57,7 @@ class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
+    status = db.Column(db.String(20), default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -66,7 +66,6 @@ with app.app_context():
     db.create_all()
     print("База данных создана")
 
-    # Создаём админа, если его нет
     admin = User.query.filter_by(email='admin@example.com').first()
     if not admin:
         admin = User(email='admin@example.com', name='Администратор', role='admin')
@@ -387,7 +386,135 @@ def create_course():
         return jsonify({'success': False, 'message': str(e)}), 500
 
 
-# ================= API ЗАЯВОК =================
+@app.route('/api/courses/<int:course_id>', methods=['PUT'])
+def update_course(course_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user.is_admin():
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+
+    try:
+        course = Course.query.get(course_id)
+        if not course:
+            return jsonify({'success': False, 'message': 'Курс не найден'}), 404
+
+        data = request.get_json()
+        if 'title' in data:
+            course.title = data['title']
+        if 'description' in data:
+            course.description = data['description']
+        if 'price' in data:
+            course.price = data['price']
+        if 'duration' in data:
+            course.duration = data['duration']
+        if 'category' in data:
+            course.category = data['category']
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Курс обновлён'}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/courses/<int:course_id>', methods=['DELETE'])
+def delete_course(course_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user.is_admin():
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+
+    try:
+        course = Course.query.get(course_id)
+        if not course:
+            return jsonify({'success': False, 'message': 'Курс не найден'}), 404
+
+        db.session.delete(course)
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Курс удалён'}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+# ================= API ЗАЯВОК (ДЛЯ АДМИНА) =================
+@app.route('/api/admin/applications', methods=['GET'])
+def admin_get_applications():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user.is_admin():
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+
+    apps = Application.query.all()
+    result = []
+    for app_entry in apps:
+        user_app = User.query.get(app_entry.user_id)
+        course_app = Course.query.get(app_entry.course_id)
+        result.append({
+            'id': app_entry.id,
+            'user_name': user_app.name if user_app else 'Unknown',
+            'user_email': user_app.email if user_app else 'Unknown',
+            'course_title': course_app.title if course_app else 'Unknown',
+            'course_id': app_entry.course_id,
+            'status': app_entry.status,
+            'created_at': app_entry.created_at.isoformat()
+        })
+
+    return jsonify(result), 200
+
+
+@app.route('/api/admin/applications/<int:application_id>', methods=['PUT'])
+def admin_update_application(application_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user.is_admin():
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+
+    try:
+        app_entry = Application.query.get(application_id)
+        if not app_entry:
+            return jsonify({'success': False, 'message': 'Заявка не найдена'}), 404
+
+        data = request.get_json()
+        if 'status' in data:
+            app_entry.status = data['status']
+
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Статус обновлён'}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+
+@app.route('/api/admin/users', methods=['GET'])
+def admin_get_users():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    user = User.query.get(session['user_id'])
+    if not user.is_admin():
+        return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
+
+    users = User.query.all()
+    result = []
+    for u in users:
+        result.append({
+            'id': u.id,
+            'name': u.name,
+            'email': u.email,
+            'role': u.role,
+            'created_at': u.created_at.isoformat() if u.created_at else None
+        })
+
+    return jsonify(result), 200
+
+
+# ================= API ЗАЯВОК (ДЛЯ ПОЛЬЗОВАТЕЛЯ) =================
 @app.route('/api/applications', methods=['GET'])
 def get_applications():
     if 'user_id' not in session:
