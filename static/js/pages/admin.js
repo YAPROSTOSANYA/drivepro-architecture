@@ -30,6 +30,8 @@ export async function renderAdmin() {
                     <button id="addCourseBtn" class="btn-add-course">+ Добавить курс</button>
                 </div>
 
+                <div class="courses-separator"></div>
+
                 <h3>Список курсов</h3>
                 <div id="courses-list-admin"></div>
             </div>
@@ -79,26 +81,55 @@ async function loadCoursesAdmin() {
         <div class="admin-course-card" data-id="${course.id}">
             <h4>${escapeHtml(course.title)}</h4>
             <p>${escapeHtml(course.description)}</p>
-            <p>💰 Цена: ${course.price} BYN | ⏱ ${course.duration} | 📚 ${course.category}</p>
-            <button class="edit-course-btn" data-id="${course.id}">✏ Редактировать</button>
-            <button class="delete-course-btn" data-id="${course.id}">🗑 Удалить</button>
+            <p class="course-meta">💰 ${course.price} BYN | ⏱ ${course.duration} | 📚 ${course.category}</p>
+            <div class="course-actions">
+                <button class="edit-course-btn" data-id="${course.id}">✏ Редактировать</button>
+                <button class="delete-course-btn" data-id="${course.id}" data-title="${escapeHtml(course.title)}">🗑 Удалить</button>
+            </div>
         </div>
     `).join('');
-
-    document.querySelectorAll('.delete-course-btn').forEach(btn => {
-        btn.onclick = async () => {
-            if (confirm('Удалить курс?')) {
-                const res = await fetch(`/api/courses/${btn.dataset.id}`, { method: 'DELETE' });
-                const data = await res.json();
-                showNotification(data.message, data.success ? 'success' : 'error');
-                if (data.success) loadCoursesAdmin();
-            }
-        };
-    });
 
     document.querySelectorAll('.edit-course-btn').forEach(btn => {
         btn.onclick = () => showEditModal(btn.dataset.id);
     });
+
+    document.querySelectorAll('.delete-course-btn').forEach(btn => {
+        btn.onclick = () => showDeleteModal(btn.dataset.id, btn.dataset.title);
+    });
+}
+
+function showDeleteModal(courseId, courseTitle) {
+    const modal = document.createElement('div');
+    modal.className = 'modal delete-modal';
+    modal.innerHTML = `
+        <div class="modal-content delete-modal-content">
+            <span class="modal-close">&times;</span>
+            <div class="delete-icon">🗑</div>
+            <h3>Подтверждение удаления</h3>
+            <p>Вы действительно хотите удалить курс <strong>"${courseTitle}"</strong>?</p>
+            <p class="delete-warning">Это действие нельзя отменить.</p>
+            <div class="modal-buttons">
+                <button class="modal-cancel-btn">Отмена</button>
+                <button class="modal-confirm-btn" data-id="${courseId}">Да, удалить</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+    modal.querySelector('.modal-cancel-btn').onclick = () => modal.remove();
+
+    modal.querySelector('.modal-confirm-btn').onclick = async () => {
+        const res = await fetch(`/api/courses/${courseId}`, { method: 'DELETE' });
+        const data = await res.json();
+        showNotification(data.message, data.success ? 'success' : 'error');
+        if (data.success) {
+            modal.remove();
+            loadCoursesAdmin();
+        }
+    };
 }
 
 async function showEditModal(courseId) {

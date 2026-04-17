@@ -1136,3 +1136,101 @@ input[type="number"]::-webkit-outer-spin-button {
         width: 100%;
     }
 }
+
+/* Отступ между формой добавления и списком курсов */
+.courses-separator {
+    margin-top: 30px;
+    border-top: 1px solid #eee;
+}
+
+/* Кнопки действий в карточке курса */
+.course-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.edit-course-btn {
+    background: #3182ce;
+    color: white;
+    border: none;
+    padding: 6px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.edit-course-btn:hover {
+    background: #2c5282;
+}
+
+.delete-course-btn {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 6px 15px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.delete-course-btn:hover {
+    background: #c53030;
+}
+
+/* Мета-информация курса */
+.course-meta {
+    color: #666;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+/* Модальное окно подтверждения удаления */
+.delete-modal .delete-modal-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.delete-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+.delete-modal-content h3 {
+    color: #e53e3e;
+    margin-bottom: 15px;
+}
+
+.delete-warning {
+    color: #e53e3e;
+    font-size: 12px;
+    margin-top: 10px;
+}
+
+.modal-cancel-btn {
+    background: #cbd5e0;
+    color: #333;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.modal-cancel-btn:hover {
+    background: #a0aec0;
+}
+
+.modal-confirm-btn {
+    background: #e53e3e;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.modal-confirm-btn:hover {
+    background: #c53030;
+}
