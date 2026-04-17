@@ -1031,22 +1031,24 @@ h2 {
     transform: translateY(-2px);
 }
 
-.success-message {
+.message-success {
     background: #d4edda;
     color: #155724;
     padding: 12px;
     border-radius: 8px;
     margin-top: 15px;
     text-align: center;
+    font-size: 14px;
 }
 
-.error-message {
-    background: #fee2e2;
-    color: #dc2626;
+.message-error {
+    background: #f8d7da;
+    color: #721c24;
     padding: 12px;
     border-radius: 8px;
     margin-top: 15px;
     text-align: center;
+    font-size: 14px;
 }
 
 /* Админ-панель */

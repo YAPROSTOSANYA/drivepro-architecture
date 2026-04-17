@@ -54,13 +54,13 @@ export async function renderApply() {
         const data = await res.json();
 
         if (data.success) {
-            resultDiv.innerHTML = '<div class="success-message">✅ Заявка успешно подана!</div>';
+            resultDiv.innerHTML = '<div class="message-success">✅ Заявка успешно подана!</div>';
             showNotification('Заявка подана', 'success');
             setTimeout(() => {
                 window.location.href = '/profile';
             }, 1500);
         } else {
-            resultDiv.innerHTML = `<div class="error-message">❌ ${data.message}</div>`;
+            resultDiv.innerHTML = `<div class="message-error">❌ ${data.message}</div>`;
             showNotification(data.message, 'error');
             setTimeout(() => {
                 resultDiv.innerHTML = '';
