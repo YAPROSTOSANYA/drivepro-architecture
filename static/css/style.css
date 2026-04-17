@@ -171,8 +171,8 @@ h2 {
     font-weight: bold;
 }
 
-/* Карточки */
-.course-card, .item-card, .application-card {
+/* Карточки курсов */
+.course-card {
     background: white;
     padding: 15px;
     border-radius: 8px;
@@ -181,16 +181,16 @@ h2 {
     transition: transform 0.2s;
 }
 
-.course-card:hover, .item-card:hover, .application-card:hover {
+.course-card:hover {
     transform: translateY(-2px);
 }
 
-.course-card h3, .item-card h3 {
+.course-card h3 {
     margin-bottom: 10px;
     color: #333;
 }
 
-.course-card p, .item-card p {
+.course-card p {
     color: #666;
     margin-bottom: 10px;
 }
@@ -723,29 +723,147 @@ h2 {
     margin: 10px 0;
 }
 
-.applications-grid {
+/* Избранное */
+.favorites-grid {
     display: grid;
     gap: 15px;
+    margin-bottom: 30px;
+}
+
+.favorite-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-left: 4px solid #ffc107;
+    transition: transform 0.2s;
+}
+
+.favorite-card:hover {
+    transform: translateY(-2px);
+}
+
+.favorite-card h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.favorite-card p {
+    margin: 5px 0;
+    color: #666;
+}
+
+/* Кнопки в карточке избранного */
+.favorite-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.apply-from-favorite-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.apply-from-favorite-btn:hover {
+    background: #5a67d8;
+}
+
+.remove-favorite-btn {
+    background: #e53e3e;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+}
+
+.remove-favorite-btn:hover {
+    background: #c53030;
+}
+
+/* Заявки */
+.application-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid #667eea;
+}
+
+.application-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.application-card h3 {
+    margin-bottom: 10px;
+    color: #333;
+    font-size: 18px;
+}
+
+.application-card p {
+    margin: 5px 0;
+    color: #666;
+}
+
+.application-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.application-status {
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+}
+
+.application-date {
+    color: #666;
+    font-size: 13px;
 }
 
 .status-pending {
-    color: #ecc94b;
-    font-weight: bold;
+    background: #fef3c7;
+    color: #d97706;
 }
 
 .status-approved {
-    color: #38a169;
-    font-weight: bold;
+    background: #d1fae5;
+    color: #059669;
 }
 
 .status-rejected {
-    color: #e53e3e;
-    font-weight: bold;
+    background: #fee2e2;
+    color: #dc2626;
 }
 
 .cancel-application-btn {
     background: #e53e3e;
-    margin-top: 10px;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.2s;
+    width: auto;
+    display: inline-block;
 }
 
 .cancel-application-btn:hover {
@@ -922,6 +1040,15 @@ h2 {
     text-align: center;
 }
 
+.error-message {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 15px;
+    text-align: center;
+}
+
 /* Админ-панель */
 .admin-container {
     max-width: 900px;
@@ -1009,132 +1136,6 @@ h2 {
 .btn-add-course:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-/* Убираем стрелки у поля price */
-input[type="number"] {
-    -moz-appearance: textfield;
-    appearance: textfield;
-}
-
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-    body {
-        padding: 10px;
-        padding-top: 70px;
-    }
-
-    h1 {
-        font-size: 22px;
-        margin-bottom: 20px;
-    }
-
-    nav a, nav span, nav button {
-        margin: 5px;
-        font-size: 12px;
-    }
-
-    .courses-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .form-container, .cabinet-container, .profile-container,
-    .home-container, .about-container, .applications-container,
-    .apply-container, .admin-container, .course-detail-container {
-        margin: 10px;
-        padding: 15px;
-    }
-
-    .filters {
-        flex-direction: column;
-    }
-
-    .filters input, .filters select, .filters button {
-        width: 100%;
-    }
-
-    .pagination-controls {
-        gap: 10px;
-    }
-
-    .page-btn {
-        padding: 6px 15px;
-        font-size: 12px;
-    }
-
-    .page-info {
-        font-size: 12px;
-        padding: 6px 12px;
-    }
-
-    .toast-notification {
-        left: 20px;
-        right: 20px;
-        min-width: auto;
-    }
-
-    .hero h1 {
-        font-size: 32px;
-    }
-
-    .hero p {
-        font-size: 16px;
-    }
-
-    .hero-buttons {
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .stats {
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .features {
-        grid-template-columns: 1fr;
-    }
-
-    .course-detail-container {
-        padding: 20px;
-    }
-
-    .course-detail-card h2 {
-        font-size: 24px;
-    }
-
-    .course-description {
-        font-size: 16px;
-    }
-
-    .admin-tabs {
-        flex-direction: column;
-    }
-}
-
-@media (max-width: 480px) {
-    .course-card .btn, .favorite-btn {
-        display: block;
-        width: 100%;
-        margin-bottom: 10px;
-        text-align: center;
-    }
-
-    nav {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .course-info {
-        min-width: auto;
-        width: 100%;
-    }
 }
 
 /* Отступ между формой добавления и списком курсов */
@@ -1242,47 +1243,141 @@ input[type="number"]::-webkit-outer-spin-button {
     flex-wrap: wrap;
 }
 
-/* Избранное */
-.favorites-grid {
-    display: grid;
-    gap: 15px;
-    margin-bottom: 30px;
+/* Убираем стрелки у поля price */
+input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 
-.favorite-card {
-    background: #f7f7f7;
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid #ffc107;
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
-.favorite-card h3 {
-    margin-bottom: 10px;
-    color: #333;
+/* Адаптивность */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+        padding-top: 70px;
+    }
+
+    h1 {
+        font-size: 22px;
+        margin-bottom: 20px;
+    }
+
+    nav a, nav span, nav button {
+        margin: 5px;
+        font-size: 12px;
+    }
+
+    .courses-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-container, .cabinet-container, .profile-container,
+    .home-container, .about-container, .applications-container,
+    .apply-container, .admin-container, .course-detail-container {
+        margin: 10px;
+        padding: 15px;
+    }
+
+    .filters {
+        flex-direction: column;
+    }
+
+    .filters input, .filters select, .filters button {
+        width: 100%;
+    }
+
+    .pagination-controls {
+        gap: 10px;
+    }
+
+    .page-btn {
+        padding: 6px 15px;
+        font-size: 12px;
+    }
+
+    .page-info {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    .toast-notification {
+        left: 20px;
+        right: 20px;
+        min-width: auto;
+    }
+
+    .hero h1 {
+        font-size: 32px;
+    }
+
+    .hero p {
+        font-size: 16px;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .stats {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .features {
+        grid-template-columns: 1fr;
+    }
+
+    .course-detail-container {
+        padding: 20px;
+    }
+
+    .course-detail-card h2 {
+        font-size: 24px;
+    }
+
+    .course-description {
+        font-size: 16px;
+    }
+
+    .admin-tabs {
+        flex-direction: column;
+    }
+
+    .application-meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .favorite-buttons {
+        flex-direction: column;
+    }
+
+    .apply-from-favorite-btn, .remove-favorite-btn {
+        width: 100%;
+    }
 }
 
-.favorite-card p {
-    margin: 5px 0;
-    color: #666;
-}
+@media (max-width: 480px) {
+    .course-card .btn, .favorite-btn {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+        text-align: center;
+    }
 
-.remove-favorite-btn {
-    background: #e53e3e;
-    color: white;
-    border: none;
-    padding: 8px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-top: 10px;
-}
+    nav {
+        flex-direction: column;
+        align-items: center;
+    }
 
-.remove-favorite-btn:hover {
-    background: #c53030;
-}
-
-.course-buttons {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-    flex-wrap: wrap;
+    .course-info {
+        min-width: auto;
+        width: 100%;
+    }
 }

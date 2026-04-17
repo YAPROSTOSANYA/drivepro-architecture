@@ -3,7 +3,6 @@ import { showLoading, hideLoading, showError, showNotification } from '../module
 export async function renderApply() {
     const user = window.currentUser;
 
-    // Если админ — показываем сообщение о запрете
     if (user && user.role === 'admin') {
         document.getElementById('app').innerHTML = `
             <div class="form-container">
@@ -45,6 +44,8 @@ export async function renderApply() {
             return;
         }
 
+        const resultDiv = document.getElementById('applyResult');
+
         const res = await fetch('/api/applications', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -52,7 +53,6 @@ export async function renderApply() {
         });
         const data = await res.json();
 
-        const resultDiv = document.getElementById('applyResult');
         if (data.success) {
             resultDiv.innerHTML = '<div class="success-message">✅ Заявка успешно подана!</div>';
             showNotification('Заявка подана', 'success');
@@ -62,6 +62,9 @@ export async function renderApply() {
         } else {
             resultDiv.innerHTML = `<div class="error-message">❌ ${data.message}</div>`;
             showNotification(data.message, 'error');
+            setTimeout(() => {
+                resultDiv.innerHTML = '';
+            }, 3000);
         }
     };
 }

@@ -25,13 +25,13 @@ export async function renderProfile() {
 
             ${!isAdmin ? `
             <div class="profile-favorites">
-                <h2>Избранные курсы</h2>
+                <h2>⭐ Избранные курсы</h2>
                 <div id="favorites-list" class="favorites-grid"></div>
             </div>
 
             <div class="profile-applications">
-                <h2>Мои заявки на курсы</h2>
-                <div id="applications-list" class="applications-grid"></div>
+                <h2>📋 Мои заявки на курсы</h2>
+                <div id="applications-list" class="favorites-grid"></div>
             </div>
             ` : ''}
         </div>
@@ -56,7 +56,6 @@ async function loadFavorites() {
             return;
         }
 
-        // Получаем данные о курсах
         const coursesRes = await fetch('/api/courses');
         const coursesData = await coursesRes.json();
         const allCourses = coursesData.courses || coursesData;
@@ -71,7 +70,10 @@ async function loadFavorites() {
                 <p>${escapeHtml(course.description)}</p>
                 <p>💰 Цена: ${course.price} BYN</p>
                 <p>⏱ Длительность: ${course.duration}</p>
-                <button class="remove-favorite-btn" data-id="${course.id}">🗑 Удалить из избранного</button>
+                <div class="favorite-buttons">
+                    <button class="apply-from-favorite-btn" data-id="${course.id}">📝 Записаться</button>
+                    <button class="remove-favorite-btn" data-id="${course.id}">🗑 Удалить из избранного</button>
+                </div>
             </div>
         `).join('');
 
@@ -86,6 +88,13 @@ async function loadFavorites() {
                 } else {
                     showNotification(data.message, 'error');
                 }
+            });
+        });
+
+        document.querySelectorAll('.apply-from-favorite-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const courseId = btn.dataset.id;
+                window.location.href = `/apply?course_id=${courseId}`;
             });
         });
     } catch (error) {
@@ -106,14 +115,57 @@ async function loadApplications() {
             return;
         }
 
-        container.innerHTML = applications.map(app => `
-            <div class="application-card">
-                <p><strong>Курс ID:</strong> ${app.course_id}</p>
-                <p><strong>Статус:</strong> <span class="status-${app.status}">${app.status === 'pending' ? 'На рассмотрении' : app.status === 'approved' ? 'Одобрена' : 'Отклонена'}</span></p>
-                <p><strong>Дата подачи:</strong> ${new Date(app.created_at).toLocaleDateString()}</p>
-                <button class="cancel-application-btn" data-id="${app.id}">Отменить заявку</button>
-            </div>
-        `).join('');
+        const coursesRes = await fetch('/api/courses');
+        const coursesData = await coursesRes.json();
+        const allCourses = coursesData.courses || coursesData;
+
+        container.innerHTML = applications.map(app => {
+            const course = allCourses.find(c => c.id === app.course_id);
+            const courseTitle = course ? course.title : `Курс ID: ${app.course_id}`;
+            const coursePrice = course ? course.price : '';
+            const courseDuration = course ? course.duration : '';
+            const courseDescription = course ? course.description : '';
+
+            let statusText = '';
+            let statusClass = '';
+            let statusIcon = '';
+
+            switch (app.status) {
+                case 'pending':
+                    statusText = 'На рассмотрении';
+                    statusClass = 'status-pending';
+                    statusIcon = '⏳';
+                    break;
+                case 'approved':
+                    statusText = 'Одобрена';
+                    statusClass = 'status-approved';
+                    statusIcon = '✅';
+                    break;
+                case 'rejected':
+                    statusText = 'Отклонена';
+                    statusClass = 'status-rejected';
+                    statusIcon = '❌';
+                    break;
+                default:
+                    statusText = app.status;
+                    statusClass = '';
+                    statusIcon = '';
+            }
+
+            return `
+                <div class="application-card">
+                    <h3>${escapeHtml(courseTitle)}</h3>
+                    <p>${escapeHtml(courseDescription)}</p>
+                    <p>💰 Цена: ${coursePrice} BYN</p>
+                    <p>⏱ Длительность: ${courseDuration}</p>
+                    <div class="application-meta">
+                        <span class="application-status ${statusClass}">${statusIcon} ${statusText}</span>
+                        <span class="application-date">📅 ${new Date(app.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <button class="cancel-application-btn" data-id="${app.id}">Отменить заявку</button>
+                </div>
+            `;
+        }).join('');
 
         document.querySelectorAll('.cancel-application-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -132,8 +184,10 @@ function showConfirmModal(applicationId) {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="modal-close">&times;</span>
+            <div class="delete-icon">📋</div>
             <h3>Подтверждение отмены</h3>
-            <p>Вы действительно хотите отменить заявку?</p>
+            <p>Вы действительно хотите отменить эту заявку?</p>
+            <p class="delete-warning">Это действие нельзя отменить.</p>
             <div class="modal-buttons">
                 <button class="modal-cancel-btn">Нет, закрыть</button>
                 <button class="modal-confirm-btn" data-id="${applicationId}">Да, отменить</button>
