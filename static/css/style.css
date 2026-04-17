@@ -1234,3 +1234,10 @@ input[type="number"]::-webkit-outer-spin-button {
 .modal-confirm-btn:hover {
     background: #c53030;
 }
+
+.course-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}

@@ -1,6 +1,20 @@
 import { showLoading, hideLoading, showError, showNotification } from '../modules/ui.js';
 
 export async function renderApply() {
+    const user = window.currentUser;
+
+    // Если админ — показываем сообщение о запрете
+    if (user && user.role === 'admin') {
+        document.getElementById('app').innerHTML = `
+            <div class="form-container">
+                <h2>Доступ запрещён</h2>
+                <p>Администратор не может записываться на курсы.</p>
+                <a href="/courses" class="btn">Вернуться к курсам</a>
+            </div>
+        `;
+        return;
+    }
+
     const app = document.getElementById('app');
     app.innerHTML = `
         <div class="apply-container">

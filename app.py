@@ -534,6 +534,10 @@ def create_application():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
 
+    user = User.query.get(session['user_id'])
+    if user.is_admin():
+        return jsonify({'success': False, 'message': 'Администратор не может записываться на курсы'}), 403
+
     try:
         data = request.get_json()
         course_id = data.get('course_id')

@@ -58,15 +58,20 @@ export function renderNav(user) {
 
     if (user) {
         let adminLink = '';
+        let applyLink = '';
+
         if (user.role === 'admin') {
             adminLink = '<a href="/admin">Админ</a>';
+        } else {
+            applyLink = '<a href="/apply">Записаться</a>';
         }
+
         nav.innerHTML = `
             <a href="/">Главная</a>
             <a href="/about">О школе</a>
             <a href="/courses">Курсы</a>
             <a href="/profile">Профиль</a>
-            <a href="/apply">Записаться</a>
+            ${applyLink}
             ${adminLink}
             <span>Привет, ${user.name}</span>
             <button onclick="window.logout()">Выйти</button>

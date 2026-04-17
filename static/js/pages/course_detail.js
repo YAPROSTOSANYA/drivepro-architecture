@@ -2,11 +2,17 @@ import { showLoading, hideLoading, showError, showNotification } from '../module
 
 export async function renderCourseDetail(courseId) {
     const app = document.getElementById('app');
+    const user = window.currentUser;
+
+    const applyButton = user && user.role !== 'admin'
+        ? `<button id="applyBtn" class="btn btn-primary">Записаться на курс</button>`
+        : '';
+
     app.innerHTML = `
         <div class="course-detail-container">
             <button id="backBtn" class="btn-back">← Назад к курсам</button>
             <div id="course-detail" class="course-detail-content"></div>
-            <button id="applyBtn" class="btn btn-primary">Записаться на курс</button>
+            ${applyButton}
         </div>
     `;
 

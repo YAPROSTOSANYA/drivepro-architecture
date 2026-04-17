@@ -111,7 +111,8 @@ function displayCourses(courses) {
         return;
     }
 
-    const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+    const user = window.currentUser;
+    const isAdmin = user && user.role === 'admin';
 
     container.innerHTML = courses.map(course => `
         <div class="course-card" data-id="${course.id}">
@@ -120,33 +121,45 @@ function displayCourses(courses) {
             <p>💰 Цена: ${course.price} BYN</p>
             <p>⏱ Длительность: ${course.duration}</p>
             <p>📚 Категория: ${course.category}</p>
-            <button class="favorite-btn ${favorites.includes(course.id) ? 'active' : ''}" data-id="${course.id}">
-                ${favorites.includes(course.id) ? '★ В избранном' : '☆ В избранное'}
-            </button>
-            <button class="btn detail-btn" data-id="${course.id}">Подробнее</button>
+            ${!isAdmin ? `
+                <div class="course-buttons">
+                    <button class="favorite-btn ${JSON.parse(localStorage.getItem('favorites') || '[]').includes(course.id) ? 'active' : ''}" data-id="${course.id}">
+                        ${JSON.parse(localStorage.getItem('favorites') || '[]').includes(course.id) ? '★ В избранном' : '☆ В избранное'}
+                    </button>
+                    <button class="btn detail-btn" data-id="${course.id}">Подробнее</button>
+                </div>
+            ` : ''}
         </div>
     `).join('');
 
-    document.querySelectorAll('.favorite-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const courseId = parseInt(btn.dataset.id);
-            toggleFavorite(courseId);
+    if (!isAdmin) {
+        document.querySelectorAll('.favorite-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const courseId = parseInt(btn.dataset.id);
+                toggleFavorite(courseId);
+            });
         });
-    });
 
-    document.querySelectorAll('.detail-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const courseId = btn.dataset.id;
-            await showCourseModal(courseId);
+        document.querySelectorAll('.detail-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const courseId = btn.dataset.id;
+                await showCourseModal(courseId);
+            });
         });
-    });
+    }
 }
 
 async function showCourseModal(courseId) {
     try {
         const res = await fetch(`/api/courses/${courseId}`);
         const course = await res.json();
+        const user = window.currentUser;
+        const isAdmin = user && user.role === 'admin';
+
+        const applyButton = !isAdmin
+            ? `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`
+            : '';
 
         const modal = document.createElement('div');
         modal.className = 'modal course-modal';
@@ -160,16 +173,20 @@ async function showCourseModal(courseId) {
                     <p><strong>⏱ Длительность:</strong> ${course.duration}</p>
                     <p><strong>📚 Категория:</strong> ${course.category}</p>
                 </div>
-                <button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>
+                ${applyButton}
             </div>
         `;
         document.body.appendChild(modal);
         modal.style.display = 'flex';
 
         modal.querySelector('.modal-close').onclick = () => modal.remove();
-        modal.querySelector('.modal-apply-btn').onclick = () => {
-            window.location.href = `/apply?course_id=${courseId}`;
-        };
+
+        const applyBtn = modal.querySelector('.modal-apply-btn');
+        if (applyBtn) {
+            applyBtn.onclick = () => {
+                window.location.href = `/apply?course_id=${courseId}`;
+            };
+        }
     } catch (error) {
         showError('Ошибка загрузки курса');
     }
