@@ -10,6 +10,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-12345'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SESSION_PERMANENT'] = False
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
 db = SQLAlchemy(app)
 
@@ -20,6 +22,7 @@ class User(db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), default='user')  # 'user' или 'admin'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -27,6 +30,9 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+    def is_admin(self):
+        return self.role == 'admin'
 
 
 class Item(db.Model):
@@ -51,7 +57,7 @@ class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
-    status = db.Column(db.String(20), default='pending')
+    status = db.Column(db.String(20), default='pending')  # pending, approved, rejected
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -59,6 +65,15 @@ class Application(db.Model):
 with app.app_context():
     db.create_all()
     print("База данных создана")
+
+    # Создаём админа, если его нет
+    admin = User.query.filter_by(email='admin@example.com').first()
+    if not admin:
+        admin = User(email='admin@example.com', name='Администратор', role='admin')
+        admin.set_password('admin123')
+        db.session.add(admin)
+        db.session.commit()
+        print("Админ создан: admin@example.com / admin123")
 
 
 # ================= СТРАНИЦЫ ФРОНТЕНДА =================
@@ -159,17 +174,9 @@ def login():
         if not user or not user.check_password(data['password']):
             return jsonify({'success': False, 'message': 'Неверный email или пароль'}), 401
 
-        session.clear()
         session['user_id'] = user.id
         session['user_name'] = user.name
-
-        remember_me = data.get('remember_me', False)
-
-        if remember_me:
-            session.permanent = True
-            app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
-        else:
-            session.permanent = False
+        session['user_role'] = user.role
 
         return jsonify({
             'success': True,
@@ -177,7 +184,8 @@ def login():
             'user': {
                 'id': user.id,
                 'name': user.name,
-                'email': user.email
+                'email': user.email,
+                'role': user.role
             }
         }), 200
 
@@ -200,6 +208,7 @@ def get_me():
             'id': user.id,
             'email': user.email,
             'name': user.name,
+            'role': user.role,
             'created_at': user.created_at.isoformat() if user.created_at else None
         }
     }), 200
@@ -209,54 +218,6 @@ def get_me():
 def logout():
     session.clear()
     return jsonify({'success': True, 'message': 'Выход выполнен'}), 200
-
-
-# ================= ВОССТАНОВЛЕНИЕ ПАРОЛЯ =================
-@app.route('/api/auth/forgot-password', methods=['POST'])
-def forgot_password():
-    try:
-        data = request.get_json()
-        email = data.get('email')
-
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            return jsonify({'success': False, 'message': 'Пользователь с таким email не найден'}), 404
-
-        reset_token = str(user.id) + "_" + str(int(datetime.utcnow().timestamp()))
-
-        return jsonify({
-            'success': True,
-            'message': 'Инструкция по восстановлению отправлена на email',
-            'reset_token': reset_token
-        }), 200
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-
-@app.route('/api/auth/reset-password', methods=['POST'])
-def reset_password():
-    try:
-        data = request.get_json()
-        reset_token = data.get('reset_token')
-        new_password = data.get('new_password')
-
-        if not reset_token or not new_password:
-            return jsonify({'success': False, 'message': 'Все поля обязательны'}), 400
-
-        user_id = reset_token.split('_')[0]
-        user = User.query.get(user_id)
-
-        if not user:
-            return jsonify({'success': False, 'message': 'Неверный токен'}), 400
-
-        user.set_password(new_password)
-        db.session.commit()
-
-        return jsonify({'success': True, 'message': 'Пароль успешно изменён'}), 200
-
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 # ================= API ДЛЯ ITEMS =================
@@ -406,7 +367,7 @@ def create_course():
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
 
     user = User.query.get(session['user_id'])
-    if user.email != 'admin@example.com':
+    if not user.is_admin():
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
 
     try:
