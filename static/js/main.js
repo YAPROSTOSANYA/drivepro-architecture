@@ -31,9 +31,10 @@ function showForgotPasswordModal() {
     modal.innerHTML = `
         <div class="modal-content">
             <span class="modal-close">&times;</span>
-            <h2>Восстановление пароля</h2>
+            <h2>🔐 Восстановление пароля</h2>
+            <p class="form-description">Введите email, указанный при регистрации. На него будет отправлен новый пароль.</p>
             <input type="email" id="modal_reset_email" placeholder="Email">
-            <button id="modal_send_reset">Отправить ссылку</button>
+            <button id="modal_send_reset">Отправить новый пароль</button>
         </div>
     `;
     document.body.appendChild(modal);
@@ -59,9 +60,6 @@ function showForgotPasswordModal() {
 
         if (data.success) {
             showNotification(data.message, 'success');
-            if (data.reset_token) {
-                showNotification(`Ваш токен для сброса: ${data.reset_token}`, 'info');
-            }
             modal.remove();
         } else {
             showNotification(data.message, 'error');
@@ -104,7 +102,16 @@ export function renderRegister() {
 }
 
 export function renderForgotPassword() {
-    // Удаляем старую страницу восстановления, используем модальное окно
+    const app = document.getElementById('app');
+    app.innerHTML = `
+        <div class="form-container">
+            <h2>🔐 Восстановление пароля</h2>
+            <p class="form-description">Введите email, указанный при регистрации. На него будет отправлен новый пароль.</p>
+            <input type="email" id="reset_email" placeholder="Email">
+            <button onclick="sendResetLink()">Отправить новый пароль</button>
+            <p><a href="/auth/login">← Вернуться ко входу</a></p>
+        </div>
+    `;
 }
 
 export function renderResetPassword() {
@@ -379,9 +386,6 @@ window.sendResetLink = async function() {
 
     if (data.success) {
         showNotification(data.message, 'success');
-        if (data.reset_token) {
-            showNotification(`Ваш токен для сброса: ${data.reset_token}. Перейдите на страницу /auth/reset-password?token=${data.reset_token}`, 'info');
-        }
     } else {
         showNotification(data.message, 'error');
     }

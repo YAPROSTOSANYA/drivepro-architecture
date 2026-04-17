@@ -276,6 +276,7 @@ async function loadApplications() {
             let statusText = '';
             let statusClass = '';
             let statusIcon = '';
+            let statusMessage = '';
 
             switch (app.status) {
                 case 'pending':
@@ -287,6 +288,7 @@ async function loadApplications() {
                     statusText = 'Одобрена';
                     statusClass = 'status-approved';
                     statusIcon = '✅';
+                    statusMessage = '<p class="status-message">📧 С вами свяжутся по электронной почте в ближайшее время.</p>';
                     break;
                 case 'rejected':
                     statusText = 'Отклонена';
@@ -309,6 +311,7 @@ async function loadApplications() {
                         <span class="application-status ${statusClass}">${statusIcon} ${statusText}</span>
                         <span class="application-date">📅 ${new Date(app.created_at).toLocaleDateString()}</span>
                     </div>
+                    ${statusMessage}
                     <button class="cancel-application-btn" data-id="${app.id}">Отменить заявку</button>
                 </div>
             `;
