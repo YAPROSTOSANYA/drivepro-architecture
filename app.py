@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify, render_template, session, redirect
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from sqlalchemy import or_
+import random
+import string
 
 app = Flask(__name__)
 
@@ -13,7 +16,16 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SESSION_PERMANENT'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
+# Настройки почты
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'driveprosupport@gmail.com'
+app.config['MAIL_PASSWORD'] = 'kzomfbauezdvfirs'
+app.config['MAIL_DEFAULT_SENDER'] = 'driveprosupport@gmail.com'
+
 db = SQLAlchemy(app)
+mail = Mail(app)
 
 
 # ================= МОДЕЛИ =================
@@ -224,6 +236,49 @@ def get_me():
 def logout():
     session.clear()
     return jsonify({'success': True, 'message': 'Выход выполнен'}), 200
+
+
+# ================= ВОССТАНОВЛЕНИЕ ПАРОЛЯ =================
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return jsonify({'success': False, 'message': 'Пользователь с таким email не найден'}), 404
+
+        # Генерируем временный пароль
+        new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+
+        # Меняем пароль пользователя
+        user.set_password(new_password)
+        db.session.commit()
+
+        # Отправляем email
+        msg = Message('Восстановление пароля DrivePro',
+                      recipients=[email])
+        msg.body = f'''Здравствуйте, {user.name}!
+
+Вы запросили восстановление пароля на сайте DrivePro.
+
+Ваш новый пароль: {new_password}
+
+Пожалуйста, войдите в систему с этим паролем и смените его в личном кабинете.
+
+Если вы не запрашивали восстановление пароля, просто проигнорируйте это письмо.
+
+С уважением,
+Команда DrivePro'''
+
+        mail.send(msg)
+
+        return jsonify({'success': True, 'message': 'Новый пароль отправлен на вашу почту'}), 200
+
+    except Exception as e:
+        print(f"Ошибка: {e}")
+        return jsonify({'success': False, 'message': 'Ошибка отправки письма'}), 500
 
 
 # ================= API ДЛЯ ITEMS =================
