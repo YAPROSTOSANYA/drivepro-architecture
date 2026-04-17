@@ -23,11 +23,11 @@ export async function renderAdmin() {
                 <h3>Добавить курс</h3>
                 <div class="add-course-form">
                     <input type="text" id="title" placeholder="Название курса">
-                    <textarea id="description" placeholder="Описание"></textarea>
-                    <input type="number" id="price" placeholder="Цена (BYN)">
+                    <textarea id="description" placeholder="Описание" rows="3"></textarea>
+                    <input type="number" id="price" placeholder="Цена (BYN)" step="any">
                     <input type="text" id="duration" placeholder="Длительность">
                     <input type="text" id="category" placeholder="Категория">
-                    <button id="addCourseBtn">Добавить курс</button>
+                    <button id="addCourseBtn" class="btn-add-course">+ Добавить курс</button>
                 </div>
 
                 <h3>Список курсов</h3>
@@ -46,12 +46,10 @@ export async function renderAdmin() {
         </div>
     `;
 
-    // Загрузка данных
     await loadCoursesAdmin();
     await loadApplicationsAdmin();
     await loadUsersAdmin();
 
-    // Табы
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -66,11 +64,15 @@ export async function renderAdmin() {
 
 async function loadCoursesAdmin() {
     const res = await fetch('/api/courses');
-    const courses = await res.json();
+    const data = await res.json();
+
+    // API возвращает объект с полем courses
+    const courses = data.courses || data;
+
     const container = document.getElementById('courses-list-admin');
     if (!container) return;
 
-    if (courses.length === 0) {
+    if (!courses || courses.length === 0) {
         container.innerHTML = '<p>Нет курсов</p>';
         return;
     }
@@ -80,8 +82,8 @@ async function loadCoursesAdmin() {
             <h4>${escapeHtml(course.title)}</h4>
             <p>${escapeHtml(course.description)}</p>
             <p>💰 Цена: ${course.price} BYN | ⏱ ${course.duration} | 📚 ${course.category}</p>
-            <button class="edit-course-btn" data-id="${course.id}">Редактировать</button>
-            <button class="delete-course-btn" data-id="${course.id}">Удалить</button>
+            <button class="edit-course-btn" data-id="${course.id}">✏ Редактировать</button>
+            <button class="delete-course-btn" data-id="${course.id}">🗑 Удалить</button>
         </div>
     `).join('');
 
@@ -105,8 +107,8 @@ async function editCourse(courseId) {
     const res = await fetch(`/api/courses/${courseId}`);
     const course = await res.json();
 
-    const newTitle = prompt('Новое название:', course.title);
-    if (newTitle) {
+    const newTitle = prompt('Введите новое название:', course.title);
+    if (newTitle && newTitle.trim()) {
         const res2 = await fetch(`/api/courses/${courseId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -135,9 +137,9 @@ async function loadApplicationsAdmin() {
             <p><strong>Курс:</strong> ${escapeHtml(app.course_title)}</p>
             <p><strong>Статус:</strong>
                 <select class="status-select" data-id="${app.id}">
-                    <option value="pending" ${app.status === 'pending' ? 'selected' : ''}>Ожидает</option>
-                    <option value="approved" ${app.status === 'approved' ? 'selected' : ''}>Одобрена</option>
-                    <option value="rejected" ${app.status === 'rejected' ? 'selected' : ''}>Отклонена</option>
+                    <option value="pending" ${app.status === 'pending' ? 'selected' : ''}>⏳ Ожидает</option>
+                    <option value="approved" ${app.status === 'approved' ? 'selected' : ''}>✅ Одобрена</option>
+                    <option value="rejected" ${app.status === 'rejected' ? 'selected' : ''}>❌ Отклонена</option>
                 </select>
             </p>
             <p><strong>Дата:</strong> ${new Date(app.created_at).toLocaleDateString()}</p>
@@ -166,39 +168,56 @@ async function loadUsersAdmin() {
     container.innerHTML = users.map(user => `
         <div class="admin-user-card">
             <p><strong>${escapeHtml(user.name)}</strong> (${user.email})</p>
-            <p>Роль: ${user.role}</p>
+            <p>Роль: ${user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь'}</p>
             <p>Дата регистрации: ${new Date(user.created_at).toLocaleDateString()}</p>
         </div>
     `).join('');
 }
 
 async function addCourse() {
-    const title = document.getElementById('title').value;
-    const description = document.getElementById('description').value;
+    const title = document.getElementById('title').value.trim();
+    const description = document.getElementById('description').value.trim();
     const price = document.getElementById('price').value;
-    const duration = document.getElementById('duration').value;
-    const category = document.getElementById('category').value;
+    const duration = document.getElementById('duration').value.trim();
+    const category = document.getElementById('category').value.trim();
 
     if (!title) {
         showNotification('Введите название курса', 'error');
         return;
     }
 
-    const res = await fetch('/api/courses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, price, duration, category })
-    });
-    const data = await res.json();
-    showNotification(data.message, data.success ? 'success' : 'error');
+    const courseData = {
+        title: title,
+        description: description || '',
+        price: price ? parseInt(price) : 0,
+        duration: duration || '',
+        category: category || ''
+    };
 
-    if (data.success) {
-        document.getElementById('title').value = '';
-        document.getElementById('description').value = '';
-        document.getElementById('price').value = '';
-        document.getElementById('duration').value = '';
-        document.getElementById('category').value = '';
-        loadCoursesAdmin();
+    try {
+        const res = await fetch('/api/courses', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(courseData)
+        });
+
+        const data = await res.json();
+
+        showNotification(data.message, data.success ? 'success' : 'error');
+
+        if (data.success) {
+            document.getElementById('title').value = '';
+            document.getElementById('description').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('duration').value = '';
+            document.getElementById('category').value = '';
+            loadCoursesAdmin();
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showNotification('Ошибка соединения с сервером', 'error');
     }
 }
 
