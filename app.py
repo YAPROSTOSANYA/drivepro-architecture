@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import or_
 import random
 import string
+import re
 
 app = Flask(__name__)
 
@@ -21,7 +22,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'driveprosupport@gmail.com'
-app.config['MAIL_PASSWORD'] = 'kzomfbauezdvfirs'
+app.config['MAIL_PASSWORD'] = 'kzomfbauezdvfirs'  # твой пароль приложения
 app.config['MAIL_DEFAULT_SENDER'] = 'driveprosupport@gmail.com'
 
 db = SQLAlchemy(app)
@@ -279,6 +280,34 @@ def forgot_password():
     except Exception as e:
         print(f"Ошибка: {e}")
         return jsonify({'success': False, 'message': 'Ошибка отправки письма'}), 500
+
+
+# ================= СМЕНА ПАРОЛЯ =================
+@app.route('/api/auth/change-password', methods=['POST'])
+def change_password():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
+    data = request.get_json()
+    old_password = data.get('old_password')
+    new_password = data.get('new_password')
+
+    if not old_password or not new_password:
+        return jsonify({'success': False, 'message': 'Все поля обязательны'}), 400
+
+    user = User.query.get(session['user_id'])
+    if not user or not user.check_password(old_password):
+        return jsonify({'success': False, 'message': 'Неверный текущий пароль'}), 401
+
+    # Проверка сложности нового пароля
+    if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$', new_password):
+        return jsonify({'success': False,
+                        'message': 'Новый пароль должен содержать минимум 6 символов, заглавную и строчную буквы, цифру и спецсимвол (@$!%*?&)'}), 400
+
+    user.set_password(new_password)
+    db.session.commit()
+
+    return jsonify({'success': True, 'message': 'Пароль успешно изменён'}), 200
 
 
 # ================= API ДЛЯ ITEMS =================
