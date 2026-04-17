@@ -135,40 +135,55 @@ function displayCourses(courses) {
     const isAdmin = user && user.role === 'admin';
     const isAuthenticated = user && !isAdmin;
 
-    container.innerHTML = courses.map(course => `
-        <div class="course-card" data-id="${course.id}">
-            <h3>${escapeHtml(course.title)}</h3>
-            <p>${escapeHtml(course.description)}</p>
-            <p>💰 Цена: ${course.price} BYN</p>
-            <p>⏱ Длительность: ${course.duration}</p>
-            <p>📚 Категория: ${course.category}</p>
-            <div class="course-buttons">
-                ${isAuthenticated ? `
-                    <button class="favorite-btn ${favoritesIds.includes(course.id) ? 'active' : ''}" data-id="${course.id}">
-                        ${favoritesIds.includes(course.id) ? '★ В избранном' : '☆ В избранное'}
-                    </button>
-                ` : ''}
-                <button class="btn detail-btn" data-id="${course.id}">Подробнее</button>
+    container.innerHTML = courses.map(course => {
+        const isFavorite = isAuthenticated && favoritesIds.includes(course.id);
+
+        return `
+            <div class="course-card" data-id="${course.id}">
+                <h3>${escapeHtml(course.title)}</h3>
+                <p>${escapeHtml(course.description)}</p>
+                <p>💰 Цена: ${course.price} BYN</p>
+                <p>⏱ Длительность: ${course.duration}</p>
+                <p>📚 Категория: ${course.category}</p>
+                <div class="course-buttons">
+                    ${!isAdmin ? `
+                        <button class="favorite-btn ${isFavorite ? 'active' : ''}" data-id="${course.id}">
+                            ${isFavorite ? '★ В избранном' : '☆ В избранное'}
+                        </button>
+                        <button class="btn detail-btn" data-id="${course.id}">Подробнее</button>
+                    ` : `
+                        <button class="btn detail-btn" data-id="${course.id}">Подробнее</button>
+                    `}
+                </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
-    if (isAuthenticated) {
-        document.querySelectorAll('.favorite-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const courseId = parseInt(btn.dataset.id);
-                await toggleFavorite(courseId, btn);
-            });
-        });
-    }
-
+    // Обработчики для кнопок "Подробнее"
     document.querySelectorAll('.detail-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
             const courseId = btn.dataset.id;
             await showCourseModal(courseId);
         });
     });
+
+    // Обработчики для кнопок "Избранное" (только для авторизованных не-админов)
+    if (!isAdmin) {
+        document.querySelectorAll('.favorite-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const courseId = parseInt(btn.dataset.id);
+
+                // Проверка авторизации
+                if (!user) {
+                    showNotification('Нужно войти в аккаунт', 'info');
+                    return;
+                }
+
+                await toggleFavorite(courseId, btn);
+            });
+        });
+    }
 }
 
 async function toggleFavorite(courseId, btn) {
@@ -214,9 +229,14 @@ async function showCourseModal(courseId) {
         const user = window.currentUser;
         const isAdmin = user && user.role === 'admin';
 
-        const applyButton = user && !isAdmin
-            ? `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`
-            : '';
+        let applyButton = '';
+        if (!isAdmin) {
+            if (user) {
+                applyButton = `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`;
+            } else {
+                applyButton = `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`;
+            }
+        }
 
         const modal = document.createElement('div');
         modal.className = 'modal course-modal';
@@ -241,6 +261,11 @@ async function showCourseModal(courseId) {
         const applyBtn = modal.querySelector('.modal-apply-btn');
         if (applyBtn) {
             applyBtn.onclick = () => {
+                if (!user) {
+                    showNotification('Нужно войти в аккаунт', 'info');
+                    modal.remove();
+                    return;
+                }
                 window.location.href = `/apply?course_id=${courseId}`;
             };
         }
