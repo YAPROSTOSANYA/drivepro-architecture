@@ -484,6 +484,73 @@ h2 {
     margin: 8px 0;
 }
 
+/* Модальное окно редактирования курса */
+.edit-modal .edit-modal-content {
+    max-width: 500px;
+    text-align: left;
+}
+
+.edit-modal-content h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.edit-form label {
+    display: block;
+    font-weight: bold;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    color: #555;
+}
+
+.edit-form input, .edit-form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.edit-form textarea {
+    resize: none;
+}
+
+.edit-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+    margin-top: 25px;
+}
+
+.edit-cancel-btn {
+    background: #cbd5e0;
+    color: #333;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.edit-cancel-btn:hover {
+    background: #a0aec0;
+}
+
+.edit-save-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 10px 25px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.edit-save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
 /* Главная страница */
 .home-container {
     padding-top: 20px;

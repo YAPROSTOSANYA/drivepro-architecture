@@ -65,8 +65,6 @@ export async function renderAdmin() {
 async function loadCoursesAdmin() {
     const res = await fetch('/api/courses');
     const data = await res.json();
-
-    // API возвращает объект с полем courses
     const courses = data.courses || data;
 
     const container = document.getElementById('courses-list-admin');
@@ -99,25 +97,76 @@ async function loadCoursesAdmin() {
     });
 
     document.querySelectorAll('.edit-course-btn').forEach(btn => {
-        btn.onclick = () => editCourse(btn.dataset.id);
+        btn.onclick = () => showEditModal(btn.dataset.id);
     });
 }
 
-async function editCourse(courseId) {
+async function showEditModal(courseId) {
     const res = await fetch(`/api/courses/${courseId}`);
     const course = await res.json();
 
-    const newTitle = prompt('Введите новое название:', course.title);
-    if (newTitle && newTitle.trim()) {
-        const res2 = await fetch(`/api/courses/${courseId}`, {
+    const modal = document.createElement('div');
+    modal.className = 'modal edit-modal';
+    modal.innerHTML = `
+        <div class="modal-content edit-modal-content">
+            <span class="modal-close">&times;</span>
+            <h3>✏ Редактирование курса</h3>
+            <div class="edit-form">
+                <label>Название курса</label>
+                <input type="text" id="edit_title" value="${escapeHtml(course.title)}">
+
+                <label>Описание</label>
+                <textarea id="edit_description" rows="4">${escapeHtml(course.description || '')}</textarea>
+
+                <label>Цена (BYN)</label>
+                <input type="number" id="edit_price" value="${course.price}" step="any">
+
+                <label>Длительность</label>
+                <input type="text" id="edit_duration" value="${escapeHtml(course.duration || '')}">
+
+                <label>Категория</label>
+                <input type="text" id="edit_category" value="${escapeHtml(course.category || '')}">
+
+                <div class="edit-buttons">
+                    <button class="edit-cancel-btn">Отмена</button>
+                    <button class="edit-save-btn" data-id="${courseId}">💾 Сохранить</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.style.display = 'flex';
+
+    modal.querySelector('.modal-close').onclick = () => modal.remove();
+    modal.querySelector('.edit-cancel-btn').onclick = () => modal.remove();
+
+    modal.querySelector('.edit-save-btn').onclick = async () => {
+        const updatedData = {
+            title: document.getElementById('edit_title').value.trim(),
+            description: document.getElementById('edit_description').value.trim(),
+            price: parseInt(document.getElementById('edit_price').value) || 0,
+            duration: document.getElementById('edit_duration').value.trim(),
+            category: document.getElementById('edit_category').value.trim()
+        };
+
+        if (!updatedData.title) {
+            showNotification('Название курса обязательно', 'error');
+            return;
+        }
+
+        const res = await fetch(`/api/courses/${courseId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title: newTitle })
+            body: JSON.stringify(updatedData)
         });
-        const data = await res2.json();
+        const data = await res.json();
         showNotification(data.message, data.success ? 'success' : 'error');
-        if (data.success) loadCoursesAdmin();
-    }
+        if (data.success) {
+            modal.remove();
+            loadCoursesAdmin();
+        }
+    };
 }
 
 async function loadApplicationsAdmin() {
@@ -197,14 +246,11 @@ async function addCourse() {
     try {
         const res = await fetch('/api/courses', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(courseData)
         });
 
         const data = await res.json();
-
         showNotification(data.message, data.success ? 'success' : 'error');
 
         if (data.success) {
@@ -216,7 +262,6 @@ async function addCourse() {
             loadCoursesAdmin();
         }
     } catch (error) {
-        console.error('Ошибка:', error);
         showNotification('Ошибка соединения с сервером', 'error');
     }
 }
