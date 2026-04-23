@@ -29,7 +29,7 @@ h1 {
     margin: 0 auto;
 }
 
-/* Навигация */
+/* Навигация – десктопная версия (по умолчанию) */
 nav {
     background: #333;
     padding: 15px 20px;
@@ -142,7 +142,6 @@ h2 {
     margin: 0;
 }
 
-/* Описание формы */
 .form-description {
     font-size: 14px;
     color: #666;
@@ -1354,32 +1353,110 @@ input[type="number"]::-webkit-outer-spin-button {
     margin: 0;
 }
 
-/* Адаптивность */
+/* Мобильное меню (гамбургер) и адаптивность */
 @media (max-width: 768px) {
+    .mobile-header {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: #333;
+        padding: 15px;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 1001;
+    }
+
+    .mobile-header h1 {
+        margin: 0;
+        font-size: 20px;
+        color: white;
+        position: static;
+    }
+
+    .mobile-menu-btn {
+        width: 30px;
+        height: 25px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        cursor: pointer;
+    }
+
+    .mobile-menu-btn span {
+        width: 100%;
+        height: 3px;
+        background: white;
+        border-radius: 3px;
+        transition: all 0.3s ease;
+    }
+
+    .mobile-menu-btn.active span:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+    }
+
+    .mobile-menu-btn.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .mobile-menu-btn.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
+    }
+
+    nav {
+        display: none !important;
+    }
+
+    .mobile-nav {
+        display: flex !important;
+        position: fixed;
+        top: 55px;
+        left: -100%;
+        width: 80%;
+        max-width: 300px;
+        height: calc(100% - 55px);
+        background: #333;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        transition: left 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+    }
+
+    .mobile-nav.open {
+        left: 0;
+    }
+
+    .mobile-nav a, .mobile-nav span, .mobile-nav button {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+        margin: 5px 0;
+        color: white;
+        text-decoration: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+    }
+
+    .mobile-nav a:hover, .mobile-nav button:hover {
+        background: #444;
+    }
+
     body {
-        padding: 10px;
         padding-top: 70px;
     }
 
-    h1 {
-        font-size: 22px;
-        margin-bottom: 20px;
-    }
-
-    nav a, nav span, nav button {
-        margin: 5px;
-        font-size: 12px;
+    .form-container {
+        margin-top: 20px;
     }
 
     .courses-grid {
         grid-template-columns: 1fr;
-    }
-
-    .form-container, .cabinet-container, .profile-container,
-    .home-container, .about-container, .applications-container,
-    .apply-container, .admin-container, .course-detail-container {
-        margin: 10px;
-        padding: 15px;
     }
 
     .filters {
@@ -1460,9 +1537,35 @@ input[type="number"]::-webkit-outer-spin-button {
     .apply-from-favorite-btn, .remove-favorite-btn {
         width: 100%;
     }
+
+    .course-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+}
+
+@media (min-width: 769px) {
+    .mobile-header {
+        display: none;
+    }
+    .mobile-nav {
+        display: none !important;
+    }
+    nav {
+        display: flex !important;
+    }
 }
 
 @media (max-width: 480px) {
+    body {
+        padding-top: 60px;
+    }
+
+    .form-container {
+        padding: 20px;
+        margin-top: 10px;
+    }
+
     .course-card .btn, .favorite-btn {
         display: block;
         width: 100%;
@@ -1470,14 +1573,14 @@ input[type="number"]::-webkit-outer-spin-button {
         text-align: center;
     }
 
-    nav {
-        flex-direction: column;
-        align-items: center;
-    }
-
     .course-info {
         min-width: auto;
         width: 100%;
+    }
+
+    .mobile-nav {
+        top: 50px;
+        height: calc(100% - 50px);
     }
 }
 

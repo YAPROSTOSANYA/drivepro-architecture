@@ -27,46 +27,6 @@ export async function renderApply() {
     `;
 
     await loadCoursesForSelect();
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const preselectedCourseId = urlParams.get('course_id');
-    if (preselectedCourseId) {
-        const select = document.getElementById('courseSelect');
-        if (select) {
-            select.value = preselectedCourseId;
-        }
-    }
-
-    document.getElementById('submitApply').onclick = async () => {
-        const courseId = document.getElementById('courseSelect')?.value;
-        if (!courseId) {
-            showNotification('Выберите курс', 'error');
-            return;
-        }
-
-        const resultDiv = document.getElementById('applyResult');
-
-        const res = await fetch('/api/applications', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ course_id: courseId })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            resultDiv.innerHTML = '<div class="message-success">✅ Заявка успешно подана!</div>';
-            showNotification('Заявка подана', 'success');
-            setTimeout(() => {
-                window.location.href = '/profile';
-            }, 1500);
-        } else {
-            resultDiv.innerHTML = `<div class="message-error">❌ ${data.message}</div>`;
-            showNotification(data.message, 'error');
-            setTimeout(() => {
-                resultDiv.innerHTML = '';
-            }, 3000);
-        }
-    };
 }
 
 async function loadCoursesForSelect() {
@@ -105,6 +65,50 @@ async function loadCoursesForSelect() {
                 ${courses.map(c => `<option value="${c.id}">${c.title} - ${c.price} BYN (${c.duration})</option>`).join('')}
             </select>
         `;
+
+        // После создания select проверяем, есть ли course_id в URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const preselectedCourseId = urlParams.get('course_id');
+        const select = document.getElementById('courseSelect');
+        if (preselectedCourseId && select) {
+            select.value = preselectedCourseId;
+        }
+
+        // Привязываем обработчик к кнопке
+        const submitBtn = document.getElementById('submitApply');
+        if (submitBtn) {
+            submitBtn.onclick = async () => {
+                const courseId = document.getElementById('courseSelect')?.value;
+                if (!courseId) {
+                    showNotification('Выберите курс', 'error');
+                    return;
+                }
+
+                const resultDiv = document.getElementById('applyResult');
+
+                const resApply = await fetch('/api/applications', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ course_id: courseId })
+                });
+                const dataApply = await resApply.json();
+
+                if (dataApply.success) {
+                    resultDiv.innerHTML = '<div class="message-success">✅ Заявка успешно подана!</div>';
+                    showNotification('Заявка подана', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/profile';
+                    }, 1500);
+                } else {
+                    resultDiv.innerHTML = `<div class="message-error">❌ ${dataApply.message}</div>`;
+                    showNotification(dataApply.message, 'error');
+                    setTimeout(() => {
+                        resultDiv.innerHTML = '';
+                    }, 3000);
+                }
+            };
+        }
+
     } catch (error) {
         console.error('Ошибка:', error);
         container.innerHTML = '<div class="error-message">❌ Ошибка загрузки курсов</div>';

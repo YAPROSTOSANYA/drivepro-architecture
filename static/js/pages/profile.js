@@ -1,8 +1,11 @@
-import { showNotification } from '../modules/ui.js';
+import { showNotification, renderNav } from '../modules/ui.js';
 
 export async function renderProfile() {
     const app = document.getElementById('app');
     const user = window.currentUser;
+
+    // Принудительно обновляем навигацию
+    renderNav(user);
 
     const isAdmin = user && user.role === 'admin';
 

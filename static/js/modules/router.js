@@ -6,14 +6,14 @@ import { renderCourseDetail } from '../pages/course_detail.js';
 import { renderProfile } from '../pages/profile.js';
 import { renderApply } from '../pages/apply.js';
 import { renderAdmin } from '../pages/admin.js';
-import { renderForgotPassword, renderResetPassword } from '../main.js';
+import { renderForgotPassword, renderResetPassword, renderLogin, renderRegister, renderCabinet } from '../main.js';
 
-let renderLogin, renderRegister, renderCabinet;
+let renderLoginFunc, renderRegisterFunc, renderCabinetFunc;
 
 export function setRenderFunctions(login, register, cabinet) {
-    renderLogin = login;
-    renderRegister = register;
-    renderCabinet = cabinet;
+    renderLoginFunc = login;
+    renderRegisterFunc = register;
+    renderCabinetFunc = cabinet;
 }
 
 const publicRoutes = ['/', '/about', '/courses', '/auth/login', '/auth/register', '/auth/forgot-password', '/auth/reset-password'];
@@ -28,7 +28,7 @@ export async function router() {
         return;
     }
 
-    if (path === '/') {
+    if (path === '/' || path === '') {
         renderHome();
     } else if (path === '/about') {
         renderAbout();
@@ -44,15 +44,15 @@ export async function router() {
     } else if (path === '/admin') {
         renderAdmin();
     } else if (path === '/auth/login') {
-        if (renderLogin) renderLogin();
+        if (renderLoginFunc) renderLoginFunc();
     } else if (path === '/auth/register') {
-        if (renderRegister) renderRegister();
+        if (renderRegisterFunc) renderRegisterFunc();
     } else if (path === '/auth/forgot-password') {
         if (renderForgotPassword) renderForgotPassword();
     } else if (path === '/auth/reset-password') {
         if (renderResetPassword) renderResetPassword();
     } else if (path === '/cabinet') {
-        if (renderCabinet) renderCabinet();
+        if (renderCabinetFunc) renderCabinetFunc();
     } else {
         document.getElementById('app').innerHTML = '<h2>404 - Страница не найдена</h2>';
     }

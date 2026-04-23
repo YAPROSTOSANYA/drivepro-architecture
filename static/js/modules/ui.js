@@ -32,43 +32,31 @@ export function showNotification(message, type = 'info') {
 
     const notification = document.createElement('div');
     notification.className = `toast-notification ${type}`;
-    notification.innerHTML = `
-        <span>${escapeHtml(message)}</span>
-        <button class="toast-close">&times;</button>
-    `;
-
+    notification.innerHTML = `<span>${escapeHtml(message)}</span><button class="toast-close">&times;</button>`;
     document.body.appendChild(notification);
-
     setTimeout(() => notification.classList.add('show'), 10);
-
     notification.querySelector('.toast-close').onclick = () => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
     };
-
     setTimeout(() => {
-        if (notification.parentElement) {
-            notification.classList.remove('show');
-            setTimeout(() => notification.remove(), 300);
-        }
+        if (notification.parentElement) notification.remove();
     }, 4000);
 }
 
 export function renderNav(user) {
     const nav = document.getElementById('nav');
-    if (!nav) return;
-
+    const mobileNav = document.getElementById('mobileNav');
+    let navContent = '';
     if (user) {
         let adminLink = '';
         let applyLink = '';
-
         if (user.role === 'admin') {
             adminLink = '<a href="/admin">Админ</a>';
         } else {
             applyLink = '<a href="/apply">Записаться</a>';
         }
-
-        nav.innerHTML = `
+        navContent = `
             <a href="/">Главная</a>
             <a href="/about">О школе</a>
             <a href="/courses">Курсы</a>
@@ -79,7 +67,7 @@ export function renderNav(user) {
             <button onclick="window.logout()">Выйти</button>
         `;
     } else {
-        nav.innerHTML = `
+        navContent = `
             <a href="/">Главная</a>
             <a href="/about">О школе</a>
             <a href="/courses">Курсы</a>
@@ -87,6 +75,37 @@ export function renderNav(user) {
             <a href="/auth/register">Регистрация</a>
         `;
     }
+    if (nav) nav.innerHTML = navContent;
+    if (mobileNav) mobileNav.innerHTML = navContent;
+
+    // Привязываем выход для мобильного меню
+    const logoutBtn = mobileNav ? mobileNav.querySelector('button') : null;
+    if (logoutBtn && logoutBtn.textContent === 'Выйти') {
+        logoutBtn.onclick = () => window.logout();
+    }
+}
+
+export function initMobileMenu() {
+    const menuBtn = document.getElementById('mobileMenuBtn');
+    const mobileNav = document.getElementById('mobileNav');
+    if (!menuBtn || !mobileNav) return;
+
+    // Удаляем старые обработчики
+    const newBtn = menuBtn.cloneNode(true);
+    menuBtn.parentNode.replaceChild(newBtn, menuBtn);
+    const newMenuBtn = document.getElementById('mobileMenuBtn');
+
+    newMenuBtn.addEventListener('click', () => {
+        newMenuBtn.classList.toggle('active');
+        mobileNav.classList.toggle('open');
+    });
+
+    mobileNav.addEventListener('click', (e) => {
+        if (e.target.closest('a, button')) {
+            newMenuBtn.classList.remove('active');
+            mobileNav.classList.remove('open');
+        }
+    });
 }
 
 function escapeHtml(text) {

@@ -1,7 +1,7 @@
 import { router, setRenderFunctions } from './modules/router.js';
 import { checkAuth } from './modules/auth.js';
 import { validateEmail, validatePassword, validateName, showValidationError } from './modules/auth.js';
-import { showLoading, showNotification } from './modules/ui.js';
+import { showLoading, showNotification, initMobileMenu, renderNav } from './modules/ui.js';
 
 export function renderLogin() {
     const app = document.getElementById('app');
@@ -316,6 +316,8 @@ window.login = async function() {
     const data = await res.json();
 
     if (data.success) {
+        window.currentUser = data.user;
+        renderNav(window.currentUser);
         window.location.href = '/profile';
     } else {
         showNotification(data.message, 'error');
@@ -425,6 +427,19 @@ window.resetPassword = async function(token) {
 window.addItem = addItem;
 window.deleteItem = deleteItem;
 
+// Глобальная функция выхода
+window.logout = async function() {
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+        console.error('Logout error', e);
+    }
+    window.currentUser = null;
+    renderNav(null);
+    // Принудительная перезагрузка страницы с очисткой кэша
+    window.location.reload(true);
+};
+
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -435,4 +450,5 @@ function escapeHtml(text) {
 showLoading();
 checkAuth().then(() => {
     router();
+    initMobileMenu();
 });

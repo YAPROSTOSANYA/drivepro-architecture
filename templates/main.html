@@ -3,15 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Drive-Pro</title>
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <link rel="stylesheet" href="/static/css/style.css?v=7">
+    <link rel="stylesheet" href="/static/css/style.css?v=22">
 </head>
 <body>
 
-    <nav id="nav"></nav>
+    <div class="mobile-header">
+        <div class="mobile-menu-btn" id="mobileMenuBtn">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <h1>Drive-Pro</h1>
+    </div>
 
-    <h1>Drive-Pro</h1>
+    <nav id="nav"></nav>
+    <div class="mobile-nav" id="mobileNav"></div>
+
     <div id="app"></div>
 
     <script type="module" src="/static/js/main.js"></script>

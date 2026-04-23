@@ -1,4 +1,4 @@
-import { renderNav, showError } from './ui.js';
+import { renderNav, showNotification } from './ui.js';
 
 export async function checkAuth() {
     try {
@@ -18,9 +18,14 @@ export async function checkAuth() {
 }
 
 export async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+        console.error('Logout error', e);
+    }
     window.currentUser = null;
     renderNav(null);
+    // Принудительно перезагружаем страницу, чтобы сбросить всё состояние
     window.location.href = '/';
 }
 
@@ -32,7 +37,6 @@ export function validateEmail(email) {
 }
 
 export function validatePassword(password) {
-    // Минимум 6 символов, заглавная, строчная, цифра, спецсимвол
     const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
     return re.test(password);
 }
@@ -44,7 +48,6 @@ export function validateName(name) {
 export function showValidationError(field, message) {
     const input = document.getElementById(field);
     if (input) {
-        // Удаляем существующую ошибку
         const existingError = input.parentElement?.querySelector('.error-message');
         if (existingError) existingError.remove();
 
@@ -57,7 +60,6 @@ export function showValidationError(field, message) {
         errorSpan.style.marginBottom = '10px';
         errorSpan.innerText = message;
 
-        // Вставляем ошибку после поля ввода
         input.insertAdjacentElement('afterend', errorSpan);
 
         setTimeout(() => {
