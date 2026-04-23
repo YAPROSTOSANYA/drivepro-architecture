@@ -7,6 +7,7 @@ from sqlalchemy import or_
 import random
 import string
 import re
+import time
 
 app = Flask(__name__)
 
@@ -22,7 +23,7 @@ app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USERNAME'] = 'driveprosupport@gmail.com'
-app.config['MAIL_PASSWORD'] = 'kzomfbauezdvfirs'  # твой пароль приложения
+app.config['MAIL_PASSWORD'] = 'kzomfbauezdvfirs'
 app.config['MAIL_DEFAULT_SENDER'] = 'driveprosupport@gmail.com'
 
 db = SQLAlchemy(app)
@@ -250,14 +251,11 @@ def forgot_password():
         if not user:
             return jsonify({'success': False, 'message': 'Пользователь с таким email не найден'}), 404
 
-        # Генерируем временный пароль
         new_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
-        # Меняем пароль пользователя
         user.set_password(new_password)
         db.session.commit()
 
-        # Отправляем email
         msg = Message('Восстановление пароля DrivePro',
                       recipients=[email])
         msg.body = f'''Здравствуйте, {user.name}!
@@ -299,7 +297,6 @@ def change_password():
     if not user or not user.check_password(old_password):
         return jsonify({'success': False, 'message': 'Неверный текущий пароль'}), 401
 
-    # Проверка сложности нового пароля
     if not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$', new_password):
         return jsonify({'success': False,
                         'message': 'Новый пароль должен содержать минимум 6 символов, заглавную и строчную буквы, цифру и спецсимвол (@$!%*?&)'}), 400
@@ -386,6 +383,8 @@ def delete_item(item_id):
 # ================= API КУРСОВ =================
 @app.route('/api/courses', methods=['GET'])
 def get_courses():
+    time.sleep(0.5)  # ЗАДЕРЖКА ДЛЯ ТЕСТА СПИННЕРА (УБРАТЬ ПОТОМ)
+
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 6, type=int)
     search = request.args.get('search', '')

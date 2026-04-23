@@ -332,11 +332,40 @@ h2 {
     border-radius: 5px;
 }
 
-/* Лоадер */
+/* Спиннер и лоадер */
+.spinner {
+    display: inline-block;
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(0, 0, 0, 0.1);
+    border-radius: 50%;
+    border-top-color: #667eea;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
 .loader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     text-align: center;
-    padding: 40px;
-    font-size: 18px;
+    z-index: 9999;
+}
+
+.loader .spinner {
+    margin-bottom: 10px;
+}
+
+.loader div:last-child {
+    font-size: 16px;
     color: #666;
 }
 
