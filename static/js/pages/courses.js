@@ -86,8 +86,7 @@ async function loadFavorites() {
     try {
         const res = await fetch('/api/favorites');
         if (res.ok) {
-            const favorites = await res.json();
-            favoritesIds = favorites.map(f => f.course_id);
+            favoritesIds = await res.json();
         }
     } catch (error) {
         console.error('Ошибка загрузки избранного', error);
@@ -145,6 +144,9 @@ function displayCourses(courses) {
                 <p>💰 Цена: ${course.price} BYN</p>
                 <p>⏱ Длительность: ${course.duration}</p>
                 <p>📚 Категория: ${course.category}</p>
+                ${course.time ? `<p>🕐 Время: ${escapeHtml(course.time)}</p>` : ''}
+                ${course.location ? `<p>📍 Место: ${escapeHtml(course.location)}</p>` : ''}
+                ${course.seats ? `<p>📊 Мест: ${course.seats}</p>` : ''}
                 <div class="course-buttons">
                     ${!isAdmin ? `
                         <button class="favorite-btn ${isFavorite ? 'active' : ''}" data-id="${course.id}">
@@ -159,22 +161,12 @@ function displayCourses(courses) {
         `;
     }).join('');
 
-    // Обработчики для кнопок "Подробнее"
-    document.querySelectorAll('.detail-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-            const courseId = btn.dataset.id;
-            await showCourseModal(courseId);
-        });
-    });
-
-    // Обработчики для кнопок "Избранное" (только для авторизованных не-админов)
     if (!isAdmin) {
         document.querySelectorAll('.favorite-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const courseId = parseInt(btn.dataset.id);
 
-                // Проверка авторизации
                 if (!user) {
                     showNotification('Нужно войти в аккаунт', 'info');
                     return;
@@ -184,6 +176,13 @@ function displayCourses(courses) {
             });
         });
     }
+
+    document.querySelectorAll('.detail-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const courseId = btn.dataset.id;
+            await showCourseModal(courseId);
+        });
+    });
 }
 
 async function toggleFavorite(courseId, btn) {
@@ -231,11 +230,7 @@ async function showCourseModal(courseId) {
 
         let applyButton = '';
         if (!isAdmin) {
-            if (user) {
-                applyButton = `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`;
-            } else {
-                applyButton = `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`;
-            }
+            applyButton = `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`;
         }
 
         const modal = document.createElement('div');
@@ -249,6 +244,9 @@ async function showCourseModal(courseId) {
                     <p><strong>💰 Цена:</strong> ${course.price} BYN</p>
                     <p><strong>⏱ Длительность:</strong> ${course.duration}</p>
                     <p><strong>📚 Категория:</strong> ${course.category}</p>
+                    ${course.time ? `<p><strong>🕐 Время:</strong> ${escapeHtml(course.time)}</p>` : ''}
+                    ${course.location ? `<p><strong>📍 Место:</strong> ${escapeHtml(course.location)}</p>` : ''}
+                    ${course.seats ? `<p><strong>📊 Мест:</strong> ${course.seats}</p>` : ''}
                 </div>
                 ${applyButton}
             </div>

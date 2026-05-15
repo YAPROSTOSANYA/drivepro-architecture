@@ -50,6 +50,9 @@ async function loadCourseDetail(courseId) {
                     <p><span class="info-label">💰 Цена:</span> <span class="info-value">${course.price} BYN</span></p>
                     <p><span class="info-label">⏱ Длительность:</span> <span class="info-value">${course.duration}</span></p>
                     <p><span class="info-label">📚 Категория:</span> <span class="info-value">${course.category}</span></p>
+                    ${course.time ? `<p><span class="info-label">🕐 Время занятий:</span> <span class="info-value">${escapeHtml(course.time)}</span></p>` : ''}
+                    ${course.location ? `<p><span class="info-label">📍 Место проведения:</span> <span class="info-value">${escapeHtml(course.location)}</span></p>` : ''}
+                    ${course.seats ? `<p><span class="info-label">📊 Свободных мест:</span> <span class="info-value">${course.seats}</span></p>` : ''}
                 </div>
             </div>
         `;

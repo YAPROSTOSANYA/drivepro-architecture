@@ -136,7 +136,7 @@ export function renderFooter() {
                 <p>Сб: 10:00 - 16:00</p>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2024 Drive-Pro. Все права защищены.</p>
+                <p>&copy; 2026 Drive-Pro. Все права защищены.</p>
             </div>
         </div>
     `;

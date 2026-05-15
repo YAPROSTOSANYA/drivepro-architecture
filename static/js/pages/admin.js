@@ -24,9 +24,12 @@ export async function renderAdmin() {
                 <div class="add-course-form">
                     <input type="text" id="title" placeholder="Название курса">
                     <textarea id="description" placeholder="Описание" rows="3"></textarea>
-                    <input type="number" id="price" placeholder="Цена (BYN)" step="any">
-                    <input type="text" id="duration" placeholder="Длительность">
-                    <input type="text" id="category" placeholder="Категория">
+                    <input type="number" id="price" placeholder="Цена (BYN)">
+                    <input type="text" id="duration" placeholder="Длительность (например: 2.5 месяца)">
+                    <input type="text" id="category" placeholder="Категория (Базовый, Мото, Грузовой, Автобус)">
+                    <input type="text" id="time" placeholder="Время занятий (например: 10:00, 14:00, 18:00)">
+                    <input type="text" id="location" placeholder="Место проведения (адрес)">
+                    <input type="number" id="seats" placeholder="Количество мест">
                     <button id="addCourseBtn" class="btn-add-course">+ Добавить курс</button>
                 </div>
 
@@ -81,55 +84,29 @@ async function loadCoursesAdmin() {
         <div class="admin-course-card" data-id="${course.id}">
             <h4>${escapeHtml(course.title)}</h4>
             <p>${escapeHtml(course.description)}</p>
-            <p class="course-meta">💰 ${course.price} BYN | ⏱ ${course.duration} | 📚 ${course.category}</p>
+            <p>💰 Цена: ${course.price} BYN | ⏱ ${course.duration} | 📚 ${course.category}</p>
+            <p>🕐 Время: ${escapeHtml(course.time || 'не указано')} | 📍 ${escapeHtml(course.location || 'не указано')} | 📊 Мест: ${course.seats || 0}</p>
             <div class="course-actions">
                 <button class="edit-course-btn" data-id="${course.id}">✏ Редактировать</button>
-                <button class="delete-course-btn" data-id="${course.id}" data-title="${escapeHtml(course.title)}">🗑 Удалить</button>
+                <button class="delete-course-btn" data-id="${course.id}">🗑 Удалить</button>
             </div>
         </div>
     `).join('');
 
+    document.querySelectorAll('.delete-course-btn').forEach(btn => {
+        btn.onclick = async () => {
+            if (confirm('Удалить курс?')) {
+                const res = await fetch(`/api/courses/${btn.dataset.id}`, { method: 'DELETE' });
+                const data = await res.json();
+                showNotification(data.message, data.success ? 'success' : 'error');
+                if (data.success) loadCoursesAdmin();
+            }
+        };
+    });
+
     document.querySelectorAll('.edit-course-btn').forEach(btn => {
         btn.onclick = () => showEditModal(btn.dataset.id);
     });
-
-    document.querySelectorAll('.delete-course-btn').forEach(btn => {
-        btn.onclick = () => showDeleteModal(btn.dataset.id, btn.dataset.title);
-    });
-}
-
-function showDeleteModal(courseId, courseTitle) {
-    const modal = document.createElement('div');
-    modal.className = 'modal delete-modal';
-    modal.innerHTML = `
-        <div class="modal-content delete-modal-content">
-            <span class="modal-close">&times;</span>
-            <div class="delete-icon">🗑</div>
-            <h3>Подтверждение удаления</h3>
-            <p>Вы действительно хотите удалить курс <strong>"${courseTitle}"</strong>?</p>
-            <p class="delete-warning">Это действие нельзя отменить.</p>
-            <div class="modal-buttons">
-                <button class="modal-cancel-btn">Отмена</button>
-                <button class="modal-confirm-btn" data-id="${courseId}">Да, удалить</button>
-            </div>
-        </div>
-    `;
-
-    document.body.appendChild(modal);
-    modal.style.display = 'flex';
-
-    modal.querySelector('.modal-close').onclick = () => modal.remove();
-    modal.querySelector('.modal-cancel-btn').onclick = () => modal.remove();
-
-    modal.querySelector('.modal-confirm-btn').onclick = async () => {
-        const res = await fetch(`/api/courses/${courseId}`, { method: 'DELETE' });
-        const data = await res.json();
-        showNotification(data.message, data.success ? 'success' : 'error');
-        if (data.success) {
-            modal.remove();
-            loadCoursesAdmin();
-        }
-    };
 }
 
 async function showEditModal(courseId) {
@@ -150,13 +127,22 @@ async function showEditModal(courseId) {
                 <textarea id="edit_description" rows="4">${escapeHtml(course.description || '')}</textarea>
 
                 <label>Цена (BYN)</label>
-                <input type="number" id="edit_price" value="${course.price}" step="any">
+                <input type="number" id="edit_price" value="${course.price}">
 
                 <label>Длительность</label>
                 <input type="text" id="edit_duration" value="${escapeHtml(course.duration || '')}">
 
                 <label>Категория</label>
                 <input type="text" id="edit_category" value="${escapeHtml(course.category || '')}">
+
+                <label>Время занятий</label>
+                <input type="text" id="edit_time" value="${escapeHtml(course.time || '')}" placeholder="10:00, 14:00, 18:00">
+
+                <label>Место проведения</label>
+                <input type="text" id="edit_location" value="${escapeHtml(course.location || '')}" placeholder="ул. Ленина, 10">
+
+                <label>Количество мест</label>
+                <input type="number" id="edit_seats" value="${course.seats || 10}">
 
                 <div class="edit-buttons">
                     <button class="edit-cancel-btn">Отмена</button>
@@ -178,7 +164,10 @@ async function showEditModal(courseId) {
             description: document.getElementById('edit_description').value.trim(),
             price: parseInt(document.getElementById('edit_price').value) || 0,
             duration: document.getElementById('edit_duration').value.trim(),
-            category: document.getElementById('edit_category').value.trim()
+            category: document.getElementById('edit_category').value.trim(),
+            time: document.getElementById('edit_time').value.trim(),
+            location: document.getElementById('edit_location').value.trim(),
+            seats: parseInt(document.getElementById('edit_seats').value) || 10
         };
 
         if (!updatedData.title) {
@@ -260,6 +249,9 @@ async function addCourse() {
     const price = document.getElementById('price').value;
     const duration = document.getElementById('duration').value.trim();
     const category = document.getElementById('category').value.trim();
+    const time = document.getElementById('time').value.trim();
+    const location = document.getElementById('location').value.trim();
+    const seats = document.getElementById('seats').value;
 
     if (!title) {
         showNotification('Введите название курса', 'error');
@@ -271,29 +263,30 @@ async function addCourse() {
         description: description || '',
         price: price ? parseInt(price) : 0,
         duration: duration || '',
-        category: category || ''
+        category: category || '',
+        time: time || '',
+        location: location || '',
+        seats: seats ? parseInt(seats) : 10
     };
 
-    try {
-        const res = await fetch('/api/courses', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(courseData)
-        });
+    const res = await fetch('/api/courses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(courseData)
+    });
+    const data = await res.json();
+    showNotification(data.message, data.success ? 'success' : 'error');
 
-        const data = await res.json();
-        showNotification(data.message, data.success ? 'success' : 'error');
-
-        if (data.success) {
-            document.getElementById('title').value = '';
-            document.getElementById('description').value = '';
-            document.getElementById('price').value = '';
-            document.getElementById('duration').value = '';
-            document.getElementById('category').value = '';
-            loadCoursesAdmin();
-        }
-    } catch (error) {
-        showNotification('Ошибка соединения с сервером', 'error');
+    if (data.success) {
+        document.getElementById('title').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('duration').value = '';
+        document.getElementById('category').value = '';
+        document.getElementById('time').value = '';
+        document.getElementById('location').value = '';
+        document.getElementById('seats').value = '';
+        loadCoursesAdmin();
     }
 }
 
