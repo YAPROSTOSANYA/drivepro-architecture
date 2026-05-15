@@ -1796,3 +1796,88 @@ footer {
         margin: 0 10px;
     }
 }
+
+/* Страница 404 */
+.error-container {
+    min-height: 60vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.error-card {
+    background: white;
+    padding: 50px;
+    border-radius: 20px;
+    max-width: 500px;
+    margin: 40px auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.error-code {
+    font-size: 100px;
+    font-weight: bold;
+    color: #667eea;
+    margin-bottom: 0;
+    line-height: 1;
+}
+
+.error-title {
+    font-size: 24px;
+    color: #333;
+    margin: 20px 0;
+}
+
+.error-text {
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.error-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-btn {
+    padding: 10px 25px;
+    border-radius: 25px;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.error-btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.error-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.error-btn-secondary {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.error-btn-secondary:hover {
+    background: #e0e0e0;
+}
+
+@media (max-width: 768px) {
+    .error-card {
+        padding: 30px;
+        margin: 20px;
+    }
+
+    .error-code {
+        font-size: 70px;
+    }
+
+    .error-title {
+        font-size: 20px;
+    }
+}

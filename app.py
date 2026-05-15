@@ -586,6 +586,11 @@ def seed():
         return 'Курсы добавлены (13 шт.)'
     return 'Курсы уже есть'
 
+# ================= ОБРАБОТКА ОШИБОК =================
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('main.html', page='404'), 404
+
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, allow_unsafe_werkzeug=True)

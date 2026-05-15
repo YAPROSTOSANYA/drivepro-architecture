@@ -161,6 +161,23 @@ export function renderCabinet() {
     loadItems();
 }
 
+export function render404() {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+        <div class="error-container">
+            <div class="error-card">
+                <div class="error-code">404</div>
+                <div class="error-title">Страница не найдена</div>
+                <div class="error-text">Извините, запрашиваемая страница не существует.</div>
+                <div class="error-buttons">
+                    <a href="/" class="error-btn error-btn-primary">На главную</a>
+                    <a href="javascript:history.back()" class="error-btn error-btn-secondary">Назад</a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 setRenderFunctions(renderLogin, renderRegister, renderCabinet);
 
 function checkPasswordStrength() {
