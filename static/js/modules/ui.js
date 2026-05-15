@@ -114,3 +114,30 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+export function renderFooter() {
+    const footer = document.getElementById('footer');
+    if (!footer) return;
+
+    footer.innerHTML = `
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Drive-Pro</h4>
+                <p>Автошкола с лучшими инструкторами</p>
+            </div>
+            <div class="footer-section">
+                <h4>Контакты</h4>
+                <p>📞 +375 (29) 123-45-67</p>
+                <p>📧 info@drivepro.by</p>
+            </div>
+            <div class="footer-section">
+                <h4>Режим работы</h4>
+                <p>Пн-Пт: 9:00 - 20:00</p>
+                <p>Сб: 10:00 - 16:00</p>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Drive-Pro. Все права защищены.</p>
+            </div>
+        </div>
+    `;
+}

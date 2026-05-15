@@ -7,6 +7,7 @@ import { renderProfile } from '../pages/profile.js';
 import { renderApply } from '../pages/apply.js';
 import { renderAdmin } from '../pages/admin.js';
 import { renderLogin, renderRegister, renderForgotPassword, renderResetPassword } from '../main.js';
+import { renderFooter } from './ui.js';
 
 let renderLoginFunc, renderRegisterFunc, renderCabinetFunc;
 
@@ -65,6 +66,7 @@ export async function router() {
     } else {
         document.getElementById('app').innerHTML = '<h2>404 - Страница не найдена</h2>';
     }
+    renderFooter();
 }
 
 document.addEventListener('click', (e) => {
