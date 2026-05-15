@@ -1,12 +1,16 @@
 from flask import Flask, request, jsonify, render_template, session, redirect
 from flask_sqlalchemy import SQLAlchemy
+from flask_socketio import SocketIO, emit
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 # ================= МОДЕЛИ =================
@@ -64,6 +68,28 @@ with app.app_context():
         db.session.add(admin)
         db.session.commit()
         print("Админ создан: admin@example.com / admin123")
+
+
+# ================= СОКЕТЫ =================
+@socketio.on('connect')
+def handle_connect():
+    print('Клиент подключился')
+    if 'user_id' in session:
+        emit('connected', {'user_id': session['user_id']})
+        # Присоединяем к комнате пользователя
+        socketio.server.enter_room(session['user_id'], str(session['user_id']))
+        if session.get('user_role') == 'admin':
+            socketio.server.enter_room(session['user_id'], 'admins')
+
+
+def notify_user(user_id, event, data):
+    """Отправляет уведомление конкретному пользователю"""
+    socketio.emit(event, data, room=str(user_id))
+
+
+def broadcast_to_admins(event, data):
+    """Отправляет уведомление всем админам"""
+    socketio.emit(event, data, room='admins')
 
 
 # ================= СТРАНИЦЫ =================
@@ -262,6 +288,10 @@ def create_course():
     )
     db.session.add(course)
     db.session.commit()
+
+    # Уведомляем всех о новом курсе
+    socketio.emit('course_added', {'course_title': course.title})
+
     return jsonify({'success': True, 'message': 'Курс создан'})
 
 
@@ -335,6 +365,10 @@ def add_favorite(course_id):
     fav = Favorite(user_id=session['user_id'], course_id=course_id)
     db.session.add(fav)
     db.session.commit()
+
+    # Уведомляем пользователя об обновлении избранного
+    notify_user(session['user_id'], 'favorites_updated', {'action': 'add', 'course_id': course_id})
+
     return jsonify({'success': True, 'message': 'Добавлено в избранное'})
 
 
@@ -347,6 +381,10 @@ def remove_favorite(course_id):
         return jsonify({'success': False, 'message': 'Не найдено'}), 404
     db.session.delete(fav)
     db.session.commit()
+
+    # Уведомляем пользователя об обновлении избранного
+    notify_user(session['user_id'], 'favorites_updated', {'action': 'remove', 'course_id': course_id})
+
     return jsonify({'success': True, 'message': 'Удалено из избранного'})
 
 
@@ -384,6 +422,16 @@ def create_application():
     course.seats -= 1
 
     db.session.commit()
+
+    # Уведомляем админов о новой заявке
+    broadcast_to_admins('new_application', {
+        'user_name': session['user_name'],
+        'course_title': course.title
+    })
+
+    # Уведомляем пользователя об обновлении заявок
+    notify_user(session['user_id'], 'applications_updated', {'action': 'create'})
+
     return jsonify({'success': True, 'message': 'Заявка подана'})
 
 
@@ -402,6 +450,10 @@ def delete_application(id):
 
     db.session.delete(app_entry)
     db.session.commit()
+
+    # Уведомляем пользователя об обновлении заявок
+    notify_user(session['user_id'], 'applications_updated', {'action': 'delete'})
+
     return jsonify({'success': True, 'message': 'Заявка отменена'})
 
 
@@ -443,10 +495,20 @@ def admin_update_application(id):
         return jsonify({'success': False, 'message': 'Заявка не найдена'}), 404
 
     data = request.get_json()
+    old_status = app_entry.status
     if 'status' in data:
         app_entry.status = data['status']
 
     db.session.commit()
+
+    # Уведомляем пользователя об изменении статуса заявки
+    if old_status != app_entry.status:
+        notify_user(app_entry.user_id, 'application_status_changed', {
+            'application_id': app_entry.id,
+            'old_status': old_status,
+            'new_status': app_entry.status
+        })
+
     return jsonify({'success': True, 'message': 'Статус обновлён'})
 
 
@@ -526,4 +588,4 @@ def seed():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    socketio.run(app, debug=True, allow_unsafe_werkzeug=True)

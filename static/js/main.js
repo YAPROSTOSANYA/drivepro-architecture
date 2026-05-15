@@ -2,6 +2,7 @@ import { router, setRenderFunctions } from './modules/router.js';
 import { checkAuth } from './modules/auth.js';
 import { validateEmail, validatePassword, validateName, showValidationError } from './modules/auth.js';
 import { showLoading, showNotification, initMobileMenu, renderNav } from './modules/ui.js';
+import { initSocket } from './modules/socket.js';
 
 export function renderLogin() {
     const app = document.getElementById('app');
@@ -32,7 +33,7 @@ function showForgotPasswordModal() {
         <div class="modal-content">
             <span class="modal-close">&times;</span>
             <h2>🔐 Восстановление пароля</h2>
-            <p class="form-description">Введите email, указанный при регистрации. На него будет отправлен новый пароль.</p>
+            <p class="form-description">Введите email, указанный при регистрации.</p>
             <input type="email" id="modal_reset_email" placeholder="Email">
             <button id="modal_send_reset">Отправить новый пароль</button>
         </div>
@@ -106,7 +107,7 @@ export function renderForgotPassword() {
     app.innerHTML = `
         <div class="form-container">
             <h2>🔐 Восстановление пароля</h2>
-            <p class="form-description">Введите email, указанный при регистрации. На него будет отправлен новый пароль.</p>
+            <p class="form-description">Введите email, указанный при регистрации.</p>
             <input type="email" id="reset_email" placeholder="Email">
             <button onclick="sendResetLink()">Отправить новый пароль</button>
             <p><a href="/auth/login">← Вернуться ко входу</a></p>
@@ -427,7 +428,6 @@ window.resetPassword = async function(token) {
 window.addItem = addItem;
 window.deleteItem = deleteItem;
 
-// Глобальная функция выхода
 window.logout = async function() {
     try {
         await fetch('/api/auth/logout', { method: 'POST' });
@@ -436,7 +436,6 @@ window.logout = async function() {
     }
     window.currentUser = null;
     renderNav(null);
-    // Принудительная перезагрузка страницы с очисткой кэша
     window.location.reload(true);
 };
 
@@ -451,4 +450,5 @@ showLoading();
 checkAuth().then(() => {
     router();
     initMobileMenu();
+    initSocket();
 });
