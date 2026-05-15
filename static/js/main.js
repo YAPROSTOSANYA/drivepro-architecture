@@ -2,7 +2,6 @@ import { router, setRenderFunctions } from './modules/router.js';
 import { checkAuth } from './modules/auth.js';
 import { validateEmail, validatePassword, validateName, showValidationError } from './modules/auth.js';
 import { showLoading, showNotification, initMobileMenu, renderNav } from './modules/ui.js';
-import { initSocket } from './modules/socket.js';
 
 export function renderLogin() {
     const app = document.getElementById('app');
@@ -467,5 +466,4 @@ showLoading();
 checkAuth().then(() => {
     router();
     initMobileMenu();
-    initSocket();
 });

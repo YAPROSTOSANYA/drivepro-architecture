@@ -3,5 +3,3 @@ Flask-SQLAlchemy
 Werkzeug
 gunicorn
 flask-mail
-eventlet
-Flask-SocketIO
