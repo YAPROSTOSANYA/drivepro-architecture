@@ -4,4 +4,4 @@ Werkzeug
 gunicorn
 flask-mail
 eventlet
-Flack-SocketIO
+Flask-SocketIO
