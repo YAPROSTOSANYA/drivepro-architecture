@@ -136,6 +136,11 @@ function displayCourses(courses) {
 
     container.innerHTML = courses.map(course => {
         const isFavorite = isAuthenticated && favoritesIds.includes(course.id);
+        const seatsDisplay = course.seats !== undefined
+            ? (course.seats === 0
+                ? '<span style="color: red;">📊 Мест: 0 (нет свободных мест)</span>'
+                : `📊 Мест: ${course.seats}`)
+            : '';
 
         return `
             <div class="course-card" data-id="${course.id}">
@@ -146,7 +151,7 @@ function displayCourses(courses) {
                 <p>📚 Категория: ${course.category}</p>
                 ${course.time ? `<p>🕐 Время: ${escapeHtml(course.time)}</p>` : ''}
                 ${course.location ? `<p>📍 Место: ${escapeHtml(course.location)}</p>` : ''}
-                ${course.seats ? `<p>📊 Мест: ${course.seats}</p>` : ''}
+                ${seatsDisplay ? `<p>${seatsDisplay}</p>` : ''}
                 <div class="course-buttons">
                     ${!isAdmin ? `
                         <button class="favorite-btn ${isFavorite ? 'active' : ''}" data-id="${course.id}">
@@ -193,11 +198,7 @@ async function toggleFavorite(courseId, btn) {
         if (isFavorite) {
             res = await fetch(`/api/favorites/${courseId}`, { method: 'DELETE' });
         } else {
-            res = await fetch('/api/favorites', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ course_id: courseId })
-            });
+            res = await fetch(`/api/favorites/${courseId}`, { method: 'POST' });
         }
 
         const data = await res.json();
@@ -217,6 +218,7 @@ async function toggleFavorite(courseId, btn) {
             showNotification(data.message, 'error');
         }
     } catch (error) {
+        console.error('Error:', error);
         showNotification('Ошибка соединения', 'error');
     }
 }
@@ -233,6 +235,12 @@ async function showCourseModal(courseId) {
             applyButton = `<button class="modal-apply-btn" data-id="${course.id}">Записаться на курс</button>`;
         }
 
+        const seatsDisplay = course.seats !== undefined
+            ? (course.seats === 0
+                ? '<p><strong>📊 Мест:</strong> <span style="color: red;">0 (нет свободных мест)</span></p>'
+                : `<p><strong>📊 Мест:</strong> ${course.seats}</p>`)
+            : '';
+
         const modal = document.createElement('div');
         modal.className = 'modal course-modal';
         modal.innerHTML = `
@@ -246,7 +254,7 @@ async function showCourseModal(courseId) {
                     <p><strong>📚 Категория:</strong> ${course.category}</p>
                     ${course.time ? `<p><strong>🕐 Время:</strong> ${escapeHtml(course.time)}</p>` : ''}
                     ${course.location ? `<p><strong>📍 Место:</strong> ${escapeHtml(course.location)}</p>` : ''}
-                    ${course.seats ? `<p><strong>📊 Мест:</strong> ${course.seats}</p>` : ''}
+                    ${seatsDisplay}
                 </div>
                 ${applyButton}
             </div>

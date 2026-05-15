@@ -136,8 +136,16 @@ def get_me():
     if 'user_id' not in session:
         return jsonify({'success': False}), 401
     user = User.query.get(session['user_id'])
-    return jsonify(
-        {'success': True, 'user': {'id': user.id, 'email': user.email, 'name': user.name, 'role': user.role}})
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': user.id,
+            'email': user.email,
+            'name': user.name,
+            'role': user.role,
+            'created_at': user.created_at.isoformat() if user.created_at else None
+        }
+    })
 
 
 @app.route('/api/auth/logout', methods=['POST'])
@@ -197,6 +205,22 @@ def get_courses():
         'pages': pagination.pages,
         'per_page': pagination.per_page
     })
+
+
+@app.route('/api/courses/all', methods=['GET'])
+def get_all_courses():
+    courses = Course.query.all()
+    return jsonify([{
+        'id': c.id,
+        'title': c.title,
+        'description': c.description,
+        'price': c.price,
+        'duration': c.duration,
+        'category': c.category,
+        'time': c.time,
+        'location': c.location,
+        'seats': c.seats
+    } for c in courses])
 
 
 @app.route('/api/courses/<int:course_id>', methods=['GET'])
@@ -301,18 +325,29 @@ def get_favorites():
     return jsonify([f.course_id for f in favs])
 
 
-@app.route('/api/favorites/<int:course_id>', methods=['POST', 'DELETE'])
-def toggle_favorite(course_id):
+@app.route('/api/favorites/<int:course_id>', methods=['POST'])
+def add_favorite(course_id):
     if 'user_id' not in session:
-        return jsonify({'success': False}), 401
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+    existing = Favorite.query.filter_by(user_id=session['user_id'], course_id=course_id).first()
+    if existing:
+        return jsonify({'success': False, 'message': 'Уже в избранном'}), 400
+    fav = Favorite(user_id=session['user_id'], course_id=course_id)
+    db.session.add(fav)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Добавлено в избранное'})
+
+
+@app.route('/api/favorites/<int:course_id>', methods=['DELETE'])
+def remove_favorite(course_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
     fav = Favorite.query.filter_by(user_id=session['user_id'], course_id=course_id).first()
-    if request.method == 'POST' and not fav:
-        db.session.add(Favorite(user_id=session['user_id'], course_id=course_id))
-        db.session.commit()
-    elif request.method == 'DELETE' and fav:
-        db.session.delete(fav)
-        db.session.commit()
-    return jsonify({'success': True})
+    if not fav:
+        return jsonify({'success': False, 'message': 'Не найдено'}), 404
+    db.session.delete(fav)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Удалено из избранного'})
 
 
 # ================= API ЗАЯВОК =================
@@ -326,23 +361,48 @@ def get_applications():
 
 @app.route('/api/applications', methods=['POST'])
 def create_application():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
     data = request.get_json()
-    existing = Application.query.filter_by(user_id=session['user_id'], course_id=data['course_id']).first()
+    course_id = data.get('course_id')
+
+    course = Course.query.get(course_id)
+    if not course:
+        return jsonify({'success': False, 'message': 'Курс не найден'}), 404
+
+    if course.seats <= 0:
+        return jsonify({'success': False, 'message': 'Нет свободных мест на этот курс'}), 400
+
+    existing = Application.query.filter_by(user_id=session['user_id'], course_id=course_id).first()
     if existing:
         return jsonify({'success': False, 'message': 'Вы уже записаны на этот курс'}), 400
-    app_entry = Application(user_id=session['user_id'], course_id=data['course_id'])
+
+    app_entry = Application(user_id=session['user_id'], course_id=course_id)
     db.session.add(app_entry)
+
+    course.seats -= 1
+
     db.session.commit()
     return jsonify({'success': True, 'message': 'Заявка подана'})
 
 
 @app.route('/api/applications/<int:id>', methods=['DELETE'])
 def delete_application(id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Не авторизован'}), 401
+
     app_entry = Application.query.filter_by(id=id, user_id=session['user_id']).first()
-    if app_entry:
-        db.session.delete(app_entry)
-        db.session.commit()
-    return jsonify({'success': True})
+    if not app_entry:
+        return jsonify({'success': False, 'message': 'Заявка не найдена'}), 404
+
+    course = Course.query.get(app_entry.course_id)
+    if course:
+        course.seats += 1
+
+    db.session.delete(app_entry)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Заявка отменена'})
 
 
 # ================= API АДМИНА =================
@@ -416,7 +476,6 @@ def admin_get_users():
 def seed():
     if Course.query.count() == 0:
         courses = [
-            # Базовые курсы (категория B)
             Course(title='Категория B (утро)', description='Обучение на легковой автомобиль. Теория и практика.',
                    price=1200, duration='2.5 месяца', category='Базовый', time='09:00, 11:00',
                    location='ул. Ленина, 10', seats=15),
@@ -429,8 +488,6 @@ def seed():
             Course(title='Категория B (выходной)', description='Обучение на легковой автомобиль. Теория и практика.',
                    price=1300, duration='3 месяца', category='Базовый', time='10:00, 12:00 (сб, вс)',
                    location='ул. Ленина, 10', seats=8),
-
-            # Мотоциклы (категория A)
             Course(title='Категория A (утро)', description='Обучение на мотоцикл. Для начинающих и опытных.', price=800,
                    duration='1.5 месяца', category='Мото', time='09:00, 11:00', location='ул. Кирова, 5', seats=8),
             Course(title='Категория A (вечер)', description='Обучение на мотоцикл. Для начинающих и опытных.',
@@ -439,8 +496,6 @@ def seed():
             Course(title='Категория A (выходной)', description='Обучение на мотоцикл. Для начинающих и опытных.',
                    price=900, duration='2 месяца', category='Мото', time='11:00, 13:00 (сб, вс)',
                    location='ул. Кирова, 5', seats=5),
-
-            # Грузовые (категория C)
             Course(title='Категория C (утро)',
                    description='Обучение на грузовой автомобиль. Профессиональная подготовка.', price=1500,
                    duration='3 месяца', category='Грузовой', time='08:00, 10:00', location='ул. Промышленная, 3',
@@ -453,8 +508,6 @@ def seed():
                    description='Обучение на грузовой автомобиль. Профессиональная подготовка.', price=1500,
                    duration='3 месяца', category='Грузовой', time='18:00, 20:00', location='ул. Промышленная, 3',
                    seats=7),
-
-            # Автобусы (категория D)
             Course(title='Категория D (утро)', description='Обучение на автобус. Для работы в пассажирских перевозках.',
                    price=1800, duration='3.5 месяца', category='Автобус', time='09:00, 11:00',
                    location='пр. Независимости, 25', seats=12),
@@ -468,7 +521,7 @@ def seed():
         ]
         db.session.add_all(courses)
         db.session.commit()
-        return 'Курсы добавлены (12 шт.)'
+        return 'Курсы добавлены (13 шт.)'
     return 'Курсы уже есть'
 
 
