@@ -3,6 +3,7 @@ import { showNotification } from '../modules/ui.js';
 export async function renderAdmin() {
     const user = window.currentUser;
 
+    // Проверка прав доступа
     if (!user || user.role !== 'admin') {
         document.getElementById('app').innerHTML = '<div class="form-container"><h2>Доступ запрещен</h2><p>У вас нет прав администратора</p><a href="/">На главную</a></div>';
         return;
@@ -55,6 +56,7 @@ export async function renderAdmin() {
     await loadApplicationsAdmin();
     await loadUsersAdmin();
 
+    // Переключение вкладок
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.onclick = () => {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -70,6 +72,7 @@ export async function renderAdmin() {
 export async function loadCoursesAdmin() {
     const res = await fetch('/api/courses');
     const data = await res.json();
+    // API может вернуть массив или объект с полем courses
     const courses = data.courses || data;
 
     const container = document.getElementById('courses-list-admin');
@@ -93,6 +96,7 @@ export async function loadCoursesAdmin() {
         </div>
     `).join('');
 
+    // Обработчик удаления курса
     document.querySelectorAll('.delete-course-btn').forEach(btn => {
         btn.onclick = async () => {
             if (confirm('Удалить курс?')) {
@@ -104,11 +108,13 @@ export async function loadCoursesAdmin() {
         };
     });
 
+    // Обработчик редактирования курса (открывает модальное окно)
     document.querySelectorAll('.edit-course-btn').forEach(btn => {
         btn.onclick = () => showEditModal(btn.dataset.id);
     });
 }
 
+// Модальное окно редактирования курса
 async function showEditModal(courseId) {
     const res = await fetch(`/api/courses/${courseId}`);
     const course = await res.json();
@@ -158,6 +164,7 @@ async function showEditModal(courseId) {
     modal.querySelector('.modal-close').onclick = () => modal.remove();
     modal.querySelector('.edit-cancel-btn').onclick = () => modal.remove();
 
+    // Сохранение изменений
     modal.querySelector('.edit-save-btn').onclick = async () => {
         const updatedData = {
             title: document.getElementById('edit_title').value.trim(),
@@ -215,6 +222,7 @@ export async function loadApplicationsAdmin() {
         </div>
     `).join('');
 
+    // Изменение статуса заявки
     document.querySelectorAll('.status-select').forEach(select => {
         select.onchange = async () => {
             const res = await fetch(`/api/admin/applications/${select.dataset.id}`, {
@@ -278,6 +286,7 @@ async function addCourse() {
     showNotification(data.message, data.success ? 'success' : 'error');
 
     if (data.success) {
+        // Очистка формы после успешного добавления
         document.getElementById('title').value = '';
         document.getElementById('description').value = '';
         document.getElementById('price').value = '';
@@ -297,6 +306,6 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Экспортируем функции для polling
+// Глобальные функции для polling (автообновления)
 window.loadCoursesAdmin = loadCoursesAdmin;
 window.loadApplicationsAdmin = loadApplicationsAdmin;

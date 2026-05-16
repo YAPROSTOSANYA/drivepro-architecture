@@ -52,6 +52,7 @@ export async function renderCourses() {
     await loadFavorites();
     await loadCourses();
 
+    // Обработчики фильтров — при изменении сбрасываем на первую страницу
     document.getElementById('searchBtn').addEventListener('click', () => {
         currentPage = 1;
         filterCourses();
@@ -78,6 +79,7 @@ export async function renderCourses() {
 
 async function loadFavorites() {
     const user = window.currentUser;
+    // Администратор не может иметь избранное
     if (!user || user.role === 'admin') {
         favoritesIds = [];
         return;
@@ -100,6 +102,7 @@ async function loadCourses() {
     showLoading('courses-list');
 
     try {
+        // Пагинация 6 курсов на страницу + фильтры и сортировка
         let url = `/api/courses?page=${currentPage}&per_page=6`;
         if (currentSearch) url += `&search=${encodeURIComponent(currentSearch)}`;
         if (currentCategory) url += `&category=${currentCategory}`;
@@ -136,6 +139,7 @@ function displayCourses(courses) {
 
     container.innerHTML = courses.map(course => {
         const isFavorite = isAuthenticated && favoritesIds.includes(course.id);
+        // Отображаем статус мест красным, если мест нет
         const seatsDisplay = course.seats !== undefined
             ? (course.seats === 0
                 ? '<span style="color: red;">📊 Мест: 0 (нет свободных мест)</span>'
@@ -166,6 +170,7 @@ function displayCourses(courses) {
         `;
     }).join('');
 
+    // Навешиваем обработчики на кнопки избранного
     if (!isAdmin) {
         document.querySelectorAll('.favorite-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
@@ -204,6 +209,7 @@ async function toggleFavorite(courseId, btn) {
         const data = await res.json();
 
         if (data.success) {
+            // Обновляем локальный массив избранного и меняем внешний вид кнопки
             if (isFavorite) {
                 favoritesIds = favoritesIds.filter(id => id !== courseId);
                 btn.textContent = '☆ В избранное';
@@ -314,6 +320,7 @@ function renderPagination() {
 }
 
 function filterCourses() {
+    // Собираем текущие значения фильтров и перезагружаем курсы
     currentSearch = document.getElementById('searchInput').value.toLowerCase();
     currentCategory = document.getElementById('categoryFilter').value;
     currentPriceRange = document.getElementById('priceFilter').value;

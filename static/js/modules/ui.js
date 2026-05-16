@@ -27,6 +27,7 @@ export function showSuccess(message) {
 }
 
 export function showNotification(message, type = 'info') {
+    // Удаляем предыдущее уведомление, чтобы не было нагромождения
     const existing = document.querySelector('.toast-notification');
     if (existing) existing.remove();
 
@@ -34,11 +35,16 @@ export function showNotification(message, type = 'info') {
     notification.className = `toast-notification ${type}`;
     notification.innerHTML = `<span>${escapeHtml(message)}</span><button class="toast-close">&times;</button>`;
     document.body.appendChild(notification);
+
+    // Небольшая задержка для срабатывания CSS-анимации появления
     setTimeout(() => notification.classList.add('show'), 10);
+
     notification.querySelector('.toast-close').onclick = () => {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
     };
+
+    // Автоудаление через 4 секунды
     setTimeout(() => {
         if (notification.parentElement) notification.remove();
     }, 4000);
@@ -48,9 +54,11 @@ export function renderNav(user) {
     const nav = document.getElementById('nav');
     const mobileNav = document.getElementById('mobileNav');
     let navContent = '';
+
     if (user) {
         let adminLink = '';
         let applyLink = '';
+        // Ссылка на админку только для пользователей с ролью admin
         if (user.role === 'admin') {
             adminLink = '<a href="/admin">Админ</a>';
         } else {
@@ -75,14 +83,9 @@ export function renderNav(user) {
             <a href="/auth/register">Регистрация</a>
         `;
     }
+
     if (nav) nav.innerHTML = navContent;
     if (mobileNav) mobileNav.innerHTML = navContent;
-
-    // Привязываем выход для мобильного меню
-    const logoutBtn = mobileNav ? mobileNav.querySelector('button') : null;
-    if (logoutBtn && logoutBtn.textContent === 'Выйти') {
-        logoutBtn.onclick = () => window.logout();
-    }
 }
 
 export function initMobileMenu() {
@@ -90,7 +93,7 @@ export function initMobileMenu() {
     const mobileNav = document.getElementById('mobileNav');
     if (!menuBtn || !mobileNav) return;
 
-    // Удаляем старые обработчики
+    // Клонируем и заменяем кнопку, чтобы удалить все предыдущие обработчики событий
     const newBtn = menuBtn.cloneNode(true);
     menuBtn.parentNode.replaceChild(newBtn, menuBtn);
     const newMenuBtn = document.getElementById('mobileMenuBtn');
@@ -100,19 +103,13 @@ export function initMobileMenu() {
         mobileNav.classList.toggle('open');
     });
 
+    // Закрываем меню при клике на любую ссылку или кнопку внутри него
     mobileNav.addEventListener('click', (e) => {
         if (e.target.closest('a, button')) {
             newMenuBtn.classList.remove('active');
             mobileNav.classList.remove('open');
         }
     });
-}
-
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 export function renderFooter() {
@@ -140,4 +137,12 @@ export function renderFooter() {
             </div>
         </div>
     `;
+}
+
+// Защита от XSS-атак при вставке пользовательского текста в DOM
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

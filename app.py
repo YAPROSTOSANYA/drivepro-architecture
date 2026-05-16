@@ -1,18 +1,31 @@
 from flask import Flask, request, jsonify, render_template, session, redirect
 from flask_sqlalchemy import SQLAlchemy
+from flask_mail import Mail, Message
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import datetime, timedelta
+import secrets
+import string
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Настройки почты для Gmail SMTP
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'driveprosupport@gmail.com'
+app.config['MAIL_PASSWORD'] = 'kzomfbauezdvfirs'
+app.config['MAIL_DEFAULT_SENDER'] = 'driveprosupport@gmail.com'
+
 db = SQLAlchemy(app)
+mail = Mail(app)
 
 
-# ================= МОДЕЛИ =================
+# ================= МОДЕЛИ БАЗЫ ДАННЫХ =================
 class User(db.Model):
+    """Модель пользователя. Хранит email, имя, хеш пароля, роль и дату регистрации."""
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
@@ -31,6 +44,7 @@ class User(db.Model):
 
 
 class Course(db.Model):
+    """Модель курса. Содержит описание, цену, длительность, время, место и количество мест."""
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(500))
@@ -43,6 +57,7 @@ class Course(db.Model):
 
 
 class Application(db.Model):
+    """Модель заявки на курс. Связывает пользователя и курс, хранит статус заявки."""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
@@ -51,24 +66,23 @@ class Application(db.Model):
 
 
 class Favorite(db.Model):
+    """Модель избранного. Связывает пользователя и курс."""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     course_id = db.Column(db.Integer, db.ForeignKey('course.id'))
 
 
-# Создание таблиц и админа
+# Создание таблиц и дефолтного администратора
 with app.app_context():
     db.create_all()
-    admin = User.query.filter_by(email='admin@example.com').first()
-    if not admin:
+    if not User.query.filter_by(email='admin@example.com').first():
         admin = User(email='admin@example.com', name='Администратор', role='admin')
         admin.set_password('admin123')
         db.session.add(admin)
         db.session.commit()
-        print("Админ создан: admin@example.com / admin123")
 
 
-# ================= СТРАНИЦЫ =================
+# ================= СТРАНИЦЫ ФРОНТЕНДА =================
 @app.route('/')
 @app.route('/auth/login')
 def login_page():
@@ -82,6 +96,7 @@ def register_page():
 
 @app.route('/profile')
 def profile_page():
+    # Проверка авторизации: если нет сессии, перенаправляем на страницу входа
     if 'user_id' not in session:
         return redirect('/auth/login')
     return render_template('main.html', page='profile')
@@ -107,7 +122,7 @@ def admin_page():
     return render_template('main.html', page='admin')
 
 
-# ================= ОБРАБОТКА ОШИБОК =================
+# Обработчик ошибки 404
 @app.errorhandler(404)
 def not_found(error):
     return render_template('main.html', page='404'), 404
@@ -116,6 +131,7 @@ def not_found(error):
 # ================= API АУТЕНТИФИКАЦИИ =================
 @app.route('/api/auth/register', methods=['POST'])
 def register():
+    """Регистрация нового пользователя. Проверяет уникальность email."""
     data = request.get_json()
     if User.query.filter_by(email=data['email']).first():
         return jsonify({'success': False, 'message': 'Пользователь уже существует'}), 400
@@ -128,22 +144,34 @@ def register():
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
+    """Вход пользователя. При успешной проверке создаёт сессию."""
     data = request.get_json()
     user = User.query.filter_by(email=data['email']).first()
     if not user or not user.check_password(data['password']):
         return jsonify({'success': False, 'message': 'Неверный email или пароль'}), 401
+
     session['user_id'] = user.id
     session['user_name'] = user.name
     session['user_role'] = user.role
+
+    # Опция "Запомнить меня": устанавливает сессию на 30 дней
+    remember_me = data.get('remember_me', False)
+    if remember_me:
+        session.permanent = True
+        app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+    else:
+        session.permanent = False
+
     return jsonify({'success': True, 'message': 'Вход выполнен',
                     'user': {'id': user.id, 'name': user.name, 'email': user.email, 'role': user.role}})
 
 
 @app.route('/api/auth/me', methods=['GET'])
 def get_me():
+    """Возвращает информацию о текущем авторизованном пользователе."""
     if 'user_id' not in session:
         return jsonify({'success': False}), 401
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     return jsonify({
         'success': True,
         'user': {
@@ -158,13 +186,55 @@ def get_me():
 
 @app.route('/api/auth/logout', methods=['POST'])
 def logout():
+    """Завершение сессии (выход из аккаунта)."""
     session.clear()
     return jsonify({'success': True})
+
+
+# ================= ВОССТАНОВЛЕНИЕ ПАРОЛЯ =================
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    """
+    Восстановление пароля.
+    Генерирует случайный 8-символьный пароль, сохраняет его в БД и отправляет на email.
+    """
+    data = request.get_json()
+    email = data.get('email')
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({'success': False, 'message': 'Пользователь с таким email не найден'}), 404
+
+    # Генерация случайного пароля из букв и цифр
+    new_password = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
+    user.set_password(new_password)
+    db.session.commit()
+
+    try:
+        msg = Message('Восстановление пароля DrivePro', recipients=[email])
+        msg.body = f'''Здравствуйте, {user.name}!
+
+Вы запросили восстановление пароля на сайте DrivePro.
+
+Ваш новый пароль: {new_password}
+
+Пожалуйста, войдите в систему с этим паролем и смените его в личном кабинете.
+
+С уважением,
+Команда DrivePro'''
+        mail.send(msg)
+        return jsonify({'success': True, 'message': 'Новый пароль отправлен на вашу почту'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': 'Ошибка отправки письма'}), 500
 
 
 # ================= API КУРСОВ =================
 @app.route('/api/courses', methods=['GET'])
 def get_courses():
+    """
+    Получение списка курсов с пагинацией, поиском, фильтрацией и сортировкой.
+    Параметры: page, per_page, search, category, price_range, sort.
+    """
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 6, type=int)
     search = request.args.get('search', '')
@@ -174,16 +244,20 @@ def get_courses():
 
     query = Course.query
 
+    # Поиск по названию
     if search:
         query = query.filter(Course.title.ilike(f'%{search}%'))
 
+    # Фильтрация по категории
     if category:
         query = query.filter(Course.category == category)
 
+    # Фильтрация по цене (диапазон)
     if price_range and '-' in price_range:
         min_price, max_price = price_range.split('-')
         query = query.filter(Course.price >= int(min_price), Course.price <= int(max_price))
 
+    # Сортировка
     if sort == 'title_asc':
         query = query.order_by(Course.title.asc())
     elif sort == 'title_desc':
@@ -217,6 +291,7 @@ def get_courses():
 
 @app.route('/api/courses/all', methods=['GET'])
 def get_all_courses():
+    """Возвращает ВСЕ курсы без пагинации (используется для выпадающих списков и избранного)."""
     courses = Course.query.all()
     return jsonify([{
         'id': c.id,
@@ -233,7 +308,8 @@ def get_all_courses():
 
 @app.route('/api/courses/<int:course_id>', methods=['GET'])
 def get_course(course_id):
-    course = Course.query.get(course_id)
+    """Возвращает детальную информацию об одном курсе."""
+    course = db.session.get(Course, course_id)
     if not course:
         return jsonify({'success': False, 'message': 'Курс не найден'}), 404
     return jsonify({
@@ -251,9 +327,10 @@ def get_course(course_id):
 
 @app.route('/api/courses', methods=['POST'])
 def create_course():
+    """Создание нового курса. Доступно только администратору."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin():
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
 
@@ -275,13 +352,14 @@ def create_course():
 
 @app.route('/api/courses/<int:course_id>', methods=['PUT'])
 def update_course(course_id):
+    """Обновление курса. Доступно только администратору."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin():
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
 
-    course = Course.query.get(course_id)
+    course = db.session.get(Course, course_id)
     if not course:
         return jsonify({'success': False, 'message': 'Курс не найден'}), 404
 
@@ -309,13 +387,14 @@ def update_course(course_id):
 
 @app.route('/api/courses/<int:course_id>', methods=['DELETE'])
 def delete_course(course_id):
+    """Удаление курса. Доступно только администратору."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin():
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
 
-    course = Course.query.get(course_id)
+    course = db.session.get(Course, course_id)
     if not course:
         return jsonify({'success': False, 'message': 'Курс не найден'}), 404
 
@@ -327,6 +406,7 @@ def delete_course(course_id):
 # ================= API ИЗБРАННОГО =================
 @app.route('/api/favorites', methods=['GET'])
 def get_favorites():
+    """Возвращает список ID курсов, добавленных пользователем в избранное."""
     if 'user_id' not in session:
         return jsonify([])
     favs = Favorite.query.filter_by(user_id=session['user_id']).all()
@@ -335,6 +415,7 @@ def get_favorites():
 
 @app.route('/api/favorites/<int:course_id>', methods=['POST'])
 def add_favorite(course_id):
+    """Добавляет курс в избранное текущего пользователя."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
     existing = Favorite.query.filter_by(user_id=session['user_id'], course_id=course_id).first()
@@ -348,6 +429,7 @@ def add_favorite(course_id):
 
 @app.route('/api/favorites/<int:course_id>', methods=['DELETE'])
 def remove_favorite(course_id):
+    """Удаляет курс из избранного текущего пользователя."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
     fav = Favorite.query.filter_by(user_id=session['user_id'], course_id=course_id).first()
@@ -361,22 +443,28 @@ def remove_favorite(course_id):
 # ================= API ЗАЯВОК =================
 @app.route('/api/applications', methods=['GET'])
 def get_applications():
+    """Возвращает список заявок текущего пользователя."""
     apps = Application.query.filter_by(user_id=session['user_id']).all()
     return jsonify([{'id': a.id, 'course_id': a.course_id, 'status': a.status, 'created_at': a.created_at.isoformat()} for a in apps])
 
 
 @app.route('/api/applications', methods=['POST'])
 def create_application():
+    """
+    Создаёт новую заявку на курс.
+    Проверяет наличие мест и что пользователь ещё не записан на этот курс.
+    """
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
 
     data = request.get_json()
     course_id = data.get('course_id')
 
-    course = Course.query.get(course_id)
+    course = db.session.get(Course, course_id)
     if not course:
         return jsonify({'success': False, 'message': 'Курс не найден'}), 404
 
+    # Проверка наличия свободных мест
     if course.seats <= 0:
         return jsonify({'success': False, 'message': 'Нет свободных мест на этот курс'}), 400
 
@@ -387,6 +475,7 @@ def create_application():
     app_entry = Application(user_id=session['user_id'], course_id=course_id)
     db.session.add(app_entry)
 
+    # Уменьшаем количество свободных мест
     course.seats -= 1
 
     db.session.commit()
@@ -395,6 +484,10 @@ def create_application():
 
 @app.route('/api/applications/<int:id>', methods=['DELETE'])
 def delete_application(id):
+    """
+    Отменяет заявку на курс.
+    При отмене количество свободных мест увеличивается.
+    """
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
 
@@ -402,7 +495,7 @@ def delete_application(id):
     if not app_entry:
         return jsonify({'success': False, 'message': 'Заявка не найдена'}), 404
 
-    course = Course.query.get(app_entry.course_id)
+    course = db.session.get(Course, app_entry.course_id)
     if course:
         course.seats += 1
 
@@ -414,17 +507,18 @@ def delete_application(id):
 # ================= API АДМИНА =================
 @app.route('/api/admin/applications', methods=['GET'])
 def admin_get_applications():
+    """Админская версия: возвращает ВСЕ заявки с информацией о пользователе и курсе."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin():
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
 
     apps = Application.query.all()
     result = []
     for app in apps:
-        user_app = User.query.get(app.user_id)
-        course_app = Course.query.get(app.course_id)
+        user_app = db.session.get(User, app.user_id)
+        course_app = db.session.get(Course, app.course_id)
         result.append({
             'id': app.id,
             'user_name': user_app.name if user_app else 'Unknown',
@@ -438,13 +532,14 @@ def admin_get_applications():
 
 @app.route('/api/admin/applications/<int:id>', methods=['PUT'])
 def admin_update_application(id):
+    """Админская версия: изменяет статус заявки (одобрена/отклонена)."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin():
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
 
-    app_entry = Application.query.get(id)
+    app_entry = db.session.get(Application, id)
     if not app_entry:
         return jsonify({'success': False, 'message': 'Заявка не найдена'}), 404
 
@@ -458,9 +553,10 @@ def admin_update_application(id):
 
 @app.route('/api/admin/users', methods=['GET'])
 def admin_get_users():
+    """Админская версия: возвращает список всех пользователей."""
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Не авторизован'}), 401
-    user = User.query.get(session['user_id'])
+    user = db.session.get(User, session['user_id'])
     if not user.is_admin():
         return jsonify({'success': False, 'message': 'Доступ запрещен'}), 403
 
@@ -475,60 +571,6 @@ def admin_get_users():
             'created_at': u.created_at.isoformat() if u.created_at else None
         })
     return jsonify(result)
-
-
-# ================= ТЕСТОВЫЕ ДАННЫЕ =================
-@app.route('/seed')
-def seed():
-    if Course.query.count() == 0:
-        courses = [
-            Course(title='Категория B (утро)', description='Обучение на легковой автомобиль. Теория и практика.',
-                   price=1200, duration='2.5 месяца', category='Базовый', time='09:00, 11:00',
-                   location='ул. Ленина, 10', seats=15),
-            Course(title='Категория B (день)', description='Обучение на легковой автомобиль. Теория и практика.',
-                   price=1200, duration='2.5 месяца', category='Базовый', time='14:00, 16:00',
-                   location='ул. Ленина, 10', seats=12),
-            Course(title='Категория B (вечер)', description='Обучение на легковой автомобиль. Теория и практика.',
-                   price=1200, duration='2.5 месяца', category='Базовый', time='18:00, 20:00',
-                   location='ул. Ленина, 10', seats=10),
-            Course(title='Категория B (выходной)', description='Обучение на легковой автомобиль. Теория и практика.',
-                   price=1300, duration='3 месяца', category='Базовый', time='10:00, 12:00 (сб, вс)',
-                   location='ул. Ленина, 10', seats=8),
-            Course(title='Категория A (утро)', description='Обучение на мотоцикл. Для начинающих и опытных.', price=800,
-                   duration='1.5 месяца', category='Мото', time='09:00, 11:00', location='ул. Кирова, 5', seats=8),
-            Course(title='Категория A (вечер)', description='Обучение на мотоцикл. Для начинающих и опытных.',
-                   price=800, duration='1.5 месяца', category='Мото', time='17:00, 19:00', location='ул. Кирова, 5',
-                   seats=6),
-            Course(title='Категория A (выходной)', description='Обучение на мотоцикл. Для начинающих и опытных.',
-                   price=900, duration='2 месяца', category='Мото', time='11:00, 13:00 (сб, вс)',
-                   location='ул. Кирова, 5', seats=5),
-            Course(title='Категория C (утро)',
-                   description='Обучение на грузовой автомобиль. Профессиональная подготовка.', price=1500,
-                   duration='3 месяца', category='Грузовой', time='08:00, 10:00', location='ул. Промышленная, 3',
-                   seats=10),
-            Course(title='Категория C (день)',
-                   description='Обучение на грузовой автомобиль. Профессиональная подготовка.', price=1500,
-                   duration='3 месяца', category='Грузовой', time='13:00, 15:00', location='ул. Промышленная, 3',
-                   seats=8),
-            Course(title='Категория C (вечер)',
-                   description='Обучение на грузовой автомобиль. Профессиональная подготовка.', price=1500,
-                   duration='3 месяца', category='Грузовой', time='18:00, 20:00', location='ул. Промышленная, 3',
-                   seats=7),
-            Course(title='Категория D (утро)', description='Обучение на автобус. Для работы в пассажирских перевозках.',
-                   price=1800, duration='3.5 месяца', category='Автобус', time='09:00, 11:00',
-                   location='пр. Независимости, 25', seats=12),
-            Course(title='Категория D (день)', description='Обучение на автобус. Для работы в пассажирских перевозках.',
-                   price=1800, duration='3.5 месяца', category='Автобус', time='14:00, 16:00',
-                   location='пр. Независимости, 25', seats=10),
-            Course(title='Категория D (вечер)',
-                   description='Обучение на автобус. Для работы в пассажирских перевозках.', price=1800,
-                   duration='3.5 месяца', category='Автобус', time='18:00, 20:00', location='пр. Независимости, 25',
-                   seats=8)
-        ]
-        db.session.add_all(courses)
-        db.session.commit()
-        return 'Курсы добавлены (13 шт.)'
-    return 'Курсы уже есть'
 
 
 if __name__ == '__main__':

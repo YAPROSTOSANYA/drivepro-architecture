@@ -1,6 +1,7 @@
 let pollingInterval = null;
 
 export function startPolling() {
+    // Предотвращаем создание нескольких интервалов
     if (pollingInterval) return;
 
     pollingInterval = setInterval(async () => {
@@ -9,34 +10,31 @@ export function startPolling() {
 
         const path = window.location.pathname;
 
-        // Для админа — обновляем заявки без перезагрузки
+        // Автообновление админ-панели только для администратора
         if (path === '/admin' && user.role === 'admin') {
+            // Проверяем наличие глобальных функций из admin.js
             if (typeof window.loadApplicationsAdmin === 'function') {
                 await window.loadApplicationsAdmin();
-                console.log('Заявки админа обновлены');
             }
             if (typeof window.loadCoursesAdmin === 'function') {
                 await window.loadCoursesAdmin();
-                console.log('Курсы админа обновлены');
             }
         }
 
-        // Для пользователя в профиле — обновляем статус заявок
+        // Автообновление списка заявок в личном кабинете
         if (path === '/profile') {
             if (typeof window.refreshApplications === 'function') {
                 await window.refreshApplications();
-                console.log('Статус заявок обновлён');
             }
         }
 
-        // Для пользователя на странице курсов
+        // Автообновление списка курсов
         if (path === '/courses') {
             if (typeof window.loadCourses === 'function') {
                 await window.loadCourses();
-                console.log('Курсы обновлены');
             }
         }
-    }, 5000);
+    }, 5000); // Каждые 5 секунд
 }
 
 export function stopPolling() {

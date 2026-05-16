@@ -111,6 +111,7 @@ export async function renderHome() {
     `;
 }
 
+// Защита от XSS-атак при вставке данных из API
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');

@@ -4,6 +4,8 @@ import { validateEmail, validatePassword, validateName, showValidationError } fr
 import { showLoading, showNotification, initMobileMenu, renderNav } from './modules/ui.js';
 import { startPolling } from './modules/polling.js';
 
+// ================= РЕНДЕР СТРАНИЦ =================
+
 export function renderLogin() {
     const app = document.getElementById('app');
     app.innerHTML = `
@@ -26,6 +28,7 @@ export function renderLogin() {
     };
 }
 
+// Модальное окно восстановления пароля (создаётся динамически)
 function showForgotPasswordModal() {
     const modal = document.createElement('div');
     modal.className = 'modal';
@@ -168,6 +171,9 @@ export function render404() {
 
 setRenderFunctions(renderLogin, renderRegister, renderCabinet);
 
+// ================= ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ =================
+
+// Оценка сложности пароля (5 критериев: длина, заглавные, строчные, цифры, спецсимволы)
 function checkPasswordStrength() {
     const password = document.getElementById('password')?.value || '';
     const strengthDiv = document.getElementById('password-strength');
@@ -236,6 +242,7 @@ function checkPasswordStrength() {
     }
 }
 
+// Оценка сложности пароля для формы сброса пароля
 function checkPasswordStrengthReset() {
     const password = document.getElementById('new_password')?.value || '';
     const strengthDiv = document.getElementById('password-strength');
@@ -267,6 +274,7 @@ function checkPasswordStrengthReset() {
     }
 }
 
+// CRUD операции для Items (вспомогательный раздел в кабинете)
 async function loadItems() {
     try {
         const res = await fetch('/api/items');
@@ -303,6 +311,8 @@ async function deleteItem(id) {
     await fetch(`/api/items/${id}`, { method: 'DELETE' });
     loadItems();
 }
+
+// ================= ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ HTML =================
 
 window.login = async function() {
     const email = document.getElementById('email')?.value;
@@ -433,18 +443,7 @@ window.resetPassword = async function(token) {
 window.addItem = addItem;
 window.deleteItem = deleteItem;
 
-window.logout = async function() {
-    try {
-        await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (e) {
-        console.error('Logout error', e);
-    }
-    window.currentUser = null;
-    renderNav(null);
-    window.location.reload(true);
-};
-
-// Делаем функции глобальными для polling
+// Глобальная функция для обновления заявок в профиле (используется polling)
 window.refreshApplications = async function() {
     if (window.location.pathname === '/profile') {
         import('./pages/profile.js').then(module => {
@@ -453,6 +452,7 @@ window.refreshApplications = async function() {
     }
 };
 
+// Заглушка для обновления курсов (используется polling)
 window.loadCourses = async function() {
     const event = new Event('refreshCourses');
     window.dispatchEvent(event);
@@ -465,6 +465,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// ================= ЗАПУСК ПРИЛОЖЕНИЯ =================
 showLoading();
 checkAuth().then(() => {
     router();

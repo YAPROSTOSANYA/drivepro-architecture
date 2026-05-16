@@ -11,6 +11,7 @@ import { renderFooter } from './ui.js';
 
 let renderLoginFunc, renderRegisterFunc, renderCabinetFunc;
 
+// Функции рендера передаются из main.js для избежания циклических зависимостей
 export function setRenderFunctions(login, register, cabinet) {
     renderLoginFunc = login;
     renderRegisterFunc = register;
@@ -25,16 +26,19 @@ export async function router() {
     const path = window.location.pathname;
     const user = await checkAuth();
 
+    // Авторизованный пользователь не может зайти на страницы логина/регистрации
     if (user && authRoutes.includes(path)) {
         window.location.href = '/profile';
         return;
     }
 
+    // Проверка доступа к приватным маршрутам
     if (privateRoutes.some(route => path.startsWith(route)) && !user) {
         window.location.href = '/auth/login';
         return;
     }
 
+    // Маршрутизация с учётом динамических параметров (/courses/123)
     if (path === '/' || path === '') {
         renderHome();
     } else if (path === '/about') {
@@ -67,6 +71,7 @@ export async function router() {
     renderFooter();
 }
 
+// Перехват кликов по ссылкам для SPA-навигации
 document.addEventListener('click', (e) => {
     const link = e.target.closest('a');
     if (link && link.getAttribute('href') && link.getAttribute('href').startsWith('/')) {
@@ -77,4 +82,5 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Обработка кнопок "назад/вперёд" в браузере
 window.addEventListener('popstate', router);

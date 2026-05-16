@@ -67,6 +67,7 @@ async function loadFavorites() {
             return;
         }
 
+        // Получаем все курсы и фильтруем только избранные по ID
         const coursesRes = await fetch('/api/courses/all');
         const allCourses = await coursesRes.json();
 
@@ -104,6 +105,7 @@ async function loadFavorites() {
             `;
         }).join('');
 
+        // Обработчик удаления из избранного
         document.querySelectorAll('.remove-favorite-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const courseId = btn.dataset.id;
@@ -111,13 +113,14 @@ async function loadFavorites() {
                 const data = await res.json();
                 if (data.success) {
                     showNotification('Удалено из избранного', 'success');
-                    loadFavorites();
+                    loadFavorites(); // Обновляем список после удаления
                 } else {
                     showNotification(data.message, 'error');
                 }
             });
         });
 
+        // Обработчик записи на курс из избранного
         document.querySelectorAll('.apply-from-favorite-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const courseId = btn.dataset.id;
@@ -156,6 +159,7 @@ async function loadApplications() {
             let statusClass = '';
             let statusIcon = '';
 
+            // Статусы заявок с разным отображением
             switch (app.status) {
                 case 'pending':
                     statusText = 'На рассмотрении';
@@ -261,6 +265,7 @@ export async function refreshApplications() {
         document.querySelectorAll('.cancel-application-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const applicationId = btn.dataset.id;
+                // Прямое удаление без подтверждения для refreshApplications
                 const resDel = await fetch(`/api/applications/${applicationId}`, { method: 'DELETE' });
                 const dataDel = await resDel.json();
                 if (dataDel.success) {
@@ -325,6 +330,7 @@ function showChangePasswordModal() {
             return;
         }
 
+        // Валидация сложности пароля
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
         if (!passwordRegex.test(newPassword)) {
             showNotification('Пароль должен содержать минимум 6 символов, заглавную и строчную буквы, цифру и спецсимвол (@$!%*?&)', 'error');
@@ -347,6 +353,7 @@ function showChangePasswordModal() {
     };
 }
 
+// Проверка сложности пароля в реальном времени
 function checkPasswordStrengthInModal() {
     const password = document.getElementById('modal_new_password')?.value || '';
     const strengthDiv = document.getElementById('modal-password-strength');
@@ -404,6 +411,7 @@ function checkPasswordStrengthInModal() {
         strengthDiv.style.color = colors[index];
     }
 
+    // Показываем подсказки, если пароль не идеальный
     if (hintDiv && hints.length > 0 && strength < 5) {
         hintDiv.innerHTML = '<small>Пароль должен содержать:</small><br>' + hints.join('<br>');
         hintDiv.style.color = '#666';
@@ -415,6 +423,7 @@ function checkPasswordStrengthInModal() {
     }
 }
 
+// Модальное окно подтверждения отмены заявки
 function showConfirmModal(applicationId) {
     const modal = document.createElement('div');
     modal.className = 'modal confirm-modal';
@@ -442,7 +451,7 @@ function showConfirmModal(applicationId) {
         const data = await res.json();
         if (data.success) {
             showNotification('Заявка отменена', 'success');
-            renderProfile();
+            renderProfile(); // Перезагружаем профиль после отмены
         } else {
             showNotification(data.message, 'error');
         }
@@ -450,6 +459,7 @@ function showConfirmModal(applicationId) {
     };
 }
 
+// Защита от XSS-атак
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');

@@ -4,6 +4,7 @@ export async function renderCourseDetail(courseId) {
     const app = document.getElementById('app');
     const user = window.currentUser;
 
+    // Кнопка записи доступна всем, кроме администратора
     const applyButton = user && user.role !== 'admin'
         ? `<button id="applyBtn" class="btn btn-primary">Записаться на курс</button>`
         : '';
@@ -24,6 +25,7 @@ export async function renderCourseDetail(courseId) {
 
     const applyBtn = document.getElementById('applyBtn');
     if (applyBtn) {
+        // Передаём ID курса через query-параметр на страницу записи
         applyBtn.onclick = () => {
             window.location.href = `/apply?course_id=${courseId}`;
         };
@@ -62,6 +64,7 @@ async function loadCourseDetail(courseId) {
     }
 }
 
+// Защита от XSS-атак при вставке пользовательских данных (название курса, описание и т.д.)
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');

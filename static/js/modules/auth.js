@@ -12,6 +12,7 @@ export async function checkAuth() {
     } catch (e) {
         console.error('Auth check failed', e);
     }
+    // Очищаем состояние при отсутствии авторизации или ошибке
     window.currentUser = null;
     renderNav(null);
     return null;
@@ -23,20 +24,23 @@ export async function logout() {
     } catch (e) {
         console.error('Logout error', e);
     }
+    // Очищаем состояние даже при ошибке запроса
     window.currentUser = null;
     renderNav(null);
-    // Принудительно перезагружаем страницу, чтобы сбросить всё состояние
     window.location.href = '/';
 }
 
+// Экспортируем в глобальный объект для вызова из HTML-атрибутов
 window.logout = logout;
 
 export function validateEmail(email) {
+    // Email должен содержать @ и точку после неё, без пробелов
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
 }
 
 export function validatePassword(password) {
+    // Проверка: длина от 6 символов, наличие заглавной, строчной, цифры и спецсимвола
     const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
     return re.test(password);
 }
@@ -48,6 +52,7 @@ export function validateName(name) {
 export function showValidationError(field, message) {
     const input = document.getElementById(field);
     if (input) {
+        // Удаляем предыдущее сообщение об ошибке, если есть
         const existingError = input.parentElement?.querySelector('.error-message');
         if (existingError) existingError.remove();
 
@@ -62,6 +67,7 @@ export function showValidationError(field, message) {
 
         input.insertAdjacentElement('afterend', errorSpan);
 
+        // Автоматически скрываем через 3 секунды
         setTimeout(() => {
             if (errorSpan.parentElement) {
                 errorSpan.remove();
