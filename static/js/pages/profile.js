@@ -379,3 +379,5 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+export { loadFavorites, loadApplications };

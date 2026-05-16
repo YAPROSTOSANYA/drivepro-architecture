@@ -2,6 +2,7 @@ import { router, setRenderFunctions } from './modules/router.js';
 import { checkAuth } from './modules/auth.js';
 import { validateEmail, validatePassword, validateName, showValidationError } from './modules/auth.js';
 import { showLoading, showNotification, initMobileMenu, renderNav } from './modules/ui.js';
+import { startPolling } from './modules/polling.js';
 
 export function renderLogin() {
     const app = document.getElementById('app');
@@ -455,6 +456,22 @@ window.logout = async function() {
     window.location.reload(true);
 };
 
+// Экспортируем функции для polling
+window.loadCourses = async function() {
+    const event = new Event('refreshCourses');
+    window.dispatchEvent(event);
+};
+
+window.loadApplications = async function() {
+    const event = new Event('refreshApplications');
+    window.dispatchEvent(event);
+};
+
+window.loadFavorites = async function() {
+    const event = new Event('refreshFavorites');
+    window.dispatchEvent(event);
+};
+
 function escapeHtml(text) {
     if (!text) return '';
     const div = document.createElement('div');
@@ -466,4 +483,5 @@ showLoading();
 checkAuth().then(() => {
     router();
     initMobileMenu();
+    startPolling();
 });
