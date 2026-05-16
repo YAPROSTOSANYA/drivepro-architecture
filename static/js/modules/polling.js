@@ -5,25 +5,38 @@ export function startPolling() {
 
     pollingInterval = setInterval(async () => {
         const user = window.currentUser;
-        if (!user || user.role === 'admin') return;
+        if (!user) return;
 
         const path = window.location.pathname;
 
-        if (path === '/profile') {
-            // Обновляем заявки и избранное в профиле
-            if (typeof window.loadApplications === 'function') {
-                await window.loadApplications();
+        // Для админа — обновляем заявки без перезагрузки
+        if (path === '/admin' && user.role === 'admin') {
+            if (typeof window.loadApplicationsAdmin === 'function') {
+                await window.loadApplicationsAdmin();
+                console.log('Заявки админа обновлены');
             }
-            if (typeof window.loadFavorites === 'function') {
-                await window.loadFavorites();
-            }
-        } else if (path === '/courses') {
-            // Обновляем курсы
-            if (typeof window.loadCourses === 'function') {
-                await window.loadCourses();
+            if (typeof window.loadCoursesAdmin === 'function') {
+                await window.loadCoursesAdmin();
+                console.log('Курсы админа обновлены');
             }
         }
-    }, 5000); // каждые 5 секунд
+
+        // Для пользователя в профиле — обновляем статус заявок
+        if (path === '/profile') {
+            if (typeof window.refreshApplications === 'function') {
+                await window.refreshApplications();
+                console.log('Статус заявок обновлён');
+            }
+        }
+
+        // Для пользователя на странице курсов
+        if (path === '/courses') {
+            if (typeof window.loadCourses === 'function') {
+                await window.loadCourses();
+                console.log('Курсы обновлены');
+            }
+        }
+    }, 5000);
 }
 
 export function stopPolling() {

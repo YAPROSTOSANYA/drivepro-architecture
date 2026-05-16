@@ -67,7 +67,7 @@ export async function renderAdmin() {
     document.getElementById('addCourseBtn').onclick = addCourse;
 }
 
-async function loadCoursesAdmin() {
+export async function loadCoursesAdmin() {
     const res = await fetch('/api/courses');
     const data = await res.json();
     const courses = data.courses || data;
@@ -189,7 +189,7 @@ async function showEditModal(courseId) {
     };
 }
 
-async function loadApplicationsAdmin() {
+export async function loadApplicationsAdmin() {
     const res = await fetch('/api/admin/applications');
     const apps = await res.json();
     const container = document.getElementById('applications-list-admin');
@@ -296,3 +296,7 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
+
+// Экспортируем функции для polling
+window.loadCoursesAdmin = loadCoursesAdmin;
+window.loadApplicationsAdmin = loadApplicationsAdmin;

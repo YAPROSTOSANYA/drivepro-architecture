@@ -200,6 +200,83 @@ async function loadApplications() {
     }
 }
 
+export async function refreshApplications() {
+    const container = document.getElementById('applications-list');
+    if (!container) return;
+
+    try {
+        const res = await fetch('/api/applications');
+        const applications = await res.json();
+
+        if (applications.length === 0) {
+            container.innerHTML = '<p>У вас пока нет заявок. Перейдите на <a href="/courses">страницу курсов</a> чтобы записаться.</p>';
+            return;
+        }
+
+        const coursesRes = await fetch('/api/courses/all');
+        const allCourses = await coursesRes.json();
+
+        container.innerHTML = applications.map(app => {
+            const course = allCourses.find(c => c.id === app.course_id);
+            const courseTitle = course ? course.title : `Курс ID: ${app.course_id}`;
+            const coursePrice = course ? course.price : '';
+
+            let statusText = '';
+            let statusClass = '';
+            let statusIcon = '';
+
+            switch (app.status) {
+                case 'pending':
+                    statusText = 'На рассмотрении';
+                    statusClass = 'status-pending';
+                    statusIcon = '⏳';
+                    break;
+                case 'approved':
+                    statusText = 'Одобрена';
+                    statusClass = 'status-approved';
+                    statusIcon = '✅';
+                    break;
+                case 'rejected':
+                    statusText = 'Отклонена';
+                    statusClass = 'status-rejected';
+                    statusIcon = '❌';
+                    break;
+                default:
+                    statusText = app.status;
+                    statusClass = '';
+                    statusIcon = '';
+            }
+
+            return `
+                <div class="application-card">
+                    <h3>${escapeHtml(courseTitle)}</h3>
+                    <p><strong>Статус:</strong> <span class="application-status ${statusClass}">${statusIcon} ${statusText}</span></p>
+                    <p><strong>Дата подачи:</strong> ${new Date(app.created_at).toLocaleDateString()}</p>
+                    ${coursePrice ? `<p><strong>Цена:</strong> ${coursePrice} BYN</p>` : ''}
+                    <button class="cancel-application-btn" data-id="${app.id}">Отменить заявку</button>
+                </div>
+            `;
+        }).join('');
+
+        document.querySelectorAll('.cancel-application-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const applicationId = btn.dataset.id;
+                const resDel = await fetch(`/api/applications/${applicationId}`, { method: 'DELETE' });
+                const dataDel = await resDel.json();
+                if (dataDel.success) {
+                    showNotification('Заявка отменена', 'success');
+                    refreshApplications();
+                } else {
+                    showNotification(dataDel.message, 'error');
+                }
+            });
+        });
+
+    } catch (error) {
+        console.error('Ошибка обновления заявок:', error);
+    }
+}
+
 function showChangePasswordModal() {
     const modal = document.createElement('div');
     modal.className = 'modal change-password-modal';
@@ -379,5 +456,3 @@ function escapeHtml(text) {
     div.textContent = text;
     return div.innerHTML;
 }
-
-export { loadFavorites, loadApplications };

@@ -73,22 +73,10 @@ export function renderRegister() {
     app.innerHTML = `
         <div class="form-container">
             <h2>Регистрация</h2>
-            <div class="input-group">
-                <input type="text" id="name" placeholder="Имя">
-                <div id="name-error" class="error-container"></div>
-            </div>
-            <div class="input-group">
-                <input type="email" id="email" placeholder="Email">
-                <div id="email-error" class="error-container"></div>
-            </div>
-            <div class="input-group">
-                <input type="password" id="password" placeholder="Пароль">
-                <div id="password-error" class="error-container"></div>
-            </div>
-            <div class="input-group">
-                <input type="password" id="confirm_password" placeholder="Подтвердите пароль">
-                <div id="confirm_password-error" class="error-container"></div>
-            </div>
+            <input type="text" id="name" placeholder="Имя">
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Пароль">
+            <input type="password" id="confirm_password" placeholder="Подтвердите пароль">
             <div id="password-strength" class="password-strength"></div>
             <div id="password-hint" class="password-hint"></div>
             <button onclick="register()">Зарегистрироваться</button>
@@ -456,19 +444,17 @@ window.logout = async function() {
     window.location.reload(true);
 };
 
-// Экспортируем функции для polling
+// Делаем функции глобальными для polling
+window.refreshApplications = async function() {
+    if (window.location.pathname === '/profile') {
+        import('./pages/profile.js').then(module => {
+            module.refreshApplications();
+        });
+    }
+};
+
 window.loadCourses = async function() {
     const event = new Event('refreshCourses');
-    window.dispatchEvent(event);
-};
-
-window.loadApplications = async function() {
-    const event = new Event('refreshApplications');
-    window.dispatchEvent(event);
-};
-
-window.loadFavorites = async function() {
-    const event = new Event('refreshFavorites');
     window.dispatchEvent(event);
 };
 

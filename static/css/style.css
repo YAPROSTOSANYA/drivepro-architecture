@@ -1881,3 +1881,22 @@ footer {
         font-size: 20px;
     }
 }
+
+/* Компактная форма регистрации */
+.form-container input {
+    margin-bottom: 12px;
+}
+
+.password-strength {
+    margin-top: -5px;
+    margin-bottom: 12px;
+}
+
+.password-hint {
+    margin-top: -5px;
+    margin-bottom: 12px;
+}
+
+.form-container button {
+    margin-top: 5px;
+}
